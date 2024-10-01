@@ -1,0 +1,23 @@
+{
+    "providers": {
+        "globalRules_custom": {
+            "urlPattern": ".+",
+            "rules": [
+                "gad_source"
+            ]
+        },
+        "ettoday": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?ettoday.net",
+            "rules": [
+                "from",
+                "ref"
+            ]
+        },
+        "momo": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?momoshop.com",
+            "rules": [
+                "osm"
+            ]
+        }
+    }
+}
