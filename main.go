@@ -146,7 +146,7 @@ func main() {
 
 	ctx := contextWithSigterm(context.Background())
 
-	b, err := FetchAndLoadJSON(ONLINE_RULES_FILE)
+	b, err := FetchAndLoadJSON(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
