@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -148,6 +149,8 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
+    loadGuildLocaleMap()
+
 	ctx := contextWithSigterm(context.Background())
 
 	b, err := FetchAndLoadJSON(repo)
@@ -184,7 +187,7 @@ func main() {
 				}
 
 				_, err = s.SendMessageComplex(m.ChannelID, api.SendMessageData{
-					Content:         locale(m.Author.Locale, "reply") + reply,
+					Content:         locale(getGuildLocale(m.GuildID), "reply") + reply,
 					AllowedMentions: nil,
 					Reference: &discord.MessageReference{
 						MessageID: m.ID,
@@ -323,4 +326,38 @@ func locale(lang string, id string) string {
 	default:
 		return ""
 	}
+}
+
+func getGuildLocale(guildID discord.GuildID) string {
+    if v, ok := guildLocaleMap[int64(guildID)]; ok {
+        return v
+    }
+    return ""
+}
+
+var guildLocaleMap map[int64]string
+
+const GUILD_LOCALE_FILE = "guilds_locale.json"
+
+func loadGuildLocaleMap() {
+    b, err := os.ReadFile(GUILD_LOCALE_FILE)
+	if err != nil {
+        return
+    }
+
+    temp := make(map[string]string)
+    err = json.Unmarshal(b, temp)
+    if err != nil {
+        fmt.Errorf("failed to unmarshal guild locale map: %w", err)
+        return
+    }
+
+    for k, v := range temp {
+        id, err := strconv.ParseInt(k, 10, 64)
+        if err != nil {
+            fmt.Errorf("skipping %s because failed to unmarshal parse guild id: %w", k, err)
+            continue
+        }
+        guildLocaleMap[id] = v
+    }
 }
