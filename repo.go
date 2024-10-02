@@ -14,7 +14,7 @@ import (
 
 const repo string = "https://rules2.clearurls.xyz/data.minify.json"
 var urlExtractor = regexp2.MustCompile(`https?://[^\s]+`, regexp2.None)
-var paramExtracter = regexp2.MustCompile(`[?&]?([\w]+)=([\w-\.]+)`, regexp2.None)
+var paramExtracter = regexp2.MustCompile(`[?&]?([\w]+)=([\w-\.\*]+)`, regexp2.None)
 
 // Provider represents a single provider from the ClearURLs data
 type Provider struct {
