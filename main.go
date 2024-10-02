@@ -19,8 +19,8 @@ import (
 )
 
 // cleanTrackingParams removes tracking parameters from any URLs in the message
-// CleanMessageAndExtractCleanedUrls function that processes a message string and cleans up URLs based on providers' rules
-func CleanMessageAndExtractCleanedUrls(message string, data *Data) string {
+// CleanMessageAndReport function that processes a message string and cleans up URLs based on providers' rules
+func CleanMessageAndReport(message string, data *Data) string {
 	stats.TotalMessages++
 	// Find all URLs in the message
 	urlMatch, err := urlExtractor.FindStringMatch(message)
@@ -31,28 +31,28 @@ func CleanMessageAndExtractCleanedUrls(message string, data *Data) string {
 
 	containsRedirect := false
 	modified := false
-    reply := ""
+	reply := ""
 
 	// Loop through all matches (URLs)
 	for urlMatch != nil {
 		stats.TotalURLs++
 		urlStr := urlMatch.String()
 		urlModified := false
-        urlMatched := false
+		urlMatched := false
 
 		// Loop through each provider
 		for name, provider := range data.Providers {
-            if urlMatched && !strings.HasPrefix(name, "globalRules") {
-                continue
-            }
+			if urlMatched && !strings.HasPrefix(name, "globalRules") {
+				continue
+			}
 
 			if match, _ := provider.UrlPattern.MatchString(urlStr); !match {
 				continue // next provider
 			}
 
-            if !strings.HasPrefix(name, "globalRules") {
-                urlMatched = true
-            }
+			if !strings.HasPrefix(name, "globalRules") {
+				urlMatched = true
+			}
 
 			for _, rdr := range provider.Redirections {
 				if ridrectFound, _ := rdr.MatchString(urlStr); ridrectFound {
@@ -110,13 +110,13 @@ func CleanMessageAndExtractCleanedUrls(message string, data *Data) string {
 			}
 		}
 
-        if urlModified {
-            stats.CleanedURLs++
-            if urlStr[len(urlStr) - 1] == '?' {
-                urlStr = urlStr[:len(urlStr) - 1]
-            }
-            reply += urlStr + "\n"
-        }
+		if urlModified {
+			stats.CleanedURLs++
+			if urlStr[len(urlStr)-1] == '?' {
+				urlStr = urlStr[:len(urlStr)-1]
+			}
+			reply += urlStr + "\n"
+		}
 
 		// Move to the next match (URL)
 		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
@@ -131,6 +131,10 @@ func CleanMessageAndExtractCleanedUrls(message string, data *Data) string {
 
 	if modified {
 		stats.CleanedMessages++
+	}
+
+	if len(reply) > 0 && reply[len(reply)-1] == '\n' {
+		reply = reply[:len(reply)-1]
 	}
 	// Return the cleaned-up message
 	return reply
@@ -167,7 +171,7 @@ func main() {
 			}
 
 			// Check if the message contains URLs
-			reply := CleanMessageAndExtractCleanedUrls(m.Content, b)
+			reply := CleanMessageAndReport(m.Content, b)
 
 			if reply != "" {
 				edit := api.EditMessageData{}
@@ -179,19 +183,19 @@ func main() {
 					log.Printf("Failed to edit message: %v", err)
 				}
 
-                _, err = s.SendMessageComplex(m.ChannelID, api.SendMessageData{
-                	Content:         locale(m.Author.Locale, "reply") + reply,
-                	AllowedMentions: nil,
-                	Reference:       &discord.MessageReference{
-                        MessageID: m.ID,
-                        ChannelID: m.ChannelID,
-                        GuildID:   m.GuildID,
-                    },
-                	Flags:           discord.SuppressNotifications,
-                })
-                if err != nil {
-                    log.Printf("Failed to reply: %v", err)
-                }
+				_, err = s.SendMessageComplex(m.ChannelID, api.SendMessageData{
+					Content:         locale(m.Author.Locale, "reply") + reply,
+					AllowedMentions: nil,
+					Reference: &discord.MessageReference{
+						MessageID: m.ID,
+						ChannelID: m.ChannelID,
+						GuildID:   m.GuildID,
+					},
+					Flags: discord.SuppressNotifications,
+				})
+				if err != nil {
+					log.Printf("Failed to reply: %v", err)
+				}
 			}
 		})
 
@@ -303,20 +307,20 @@ func SaveStats(stats *Stats) {
 	}
 }
 
-func locale (lang string, id string) string {
-    switch id {
-    case "reply":
-        switch lang {
-            case "zh-CN":
-                fallthrough
-            case "zh-TW":
-                return "把主人的 URL 🧹掃乾淨✨✨\n"
-            case "ja":
-                return "御主人様の URL を🧹綺麗にしました✨✨\n"
-            default:
-                return "I made🧹 Master's URL Clean✨✨\n"
-        }
-    default:
-        return ""
-    }
+func locale(lang string, id string) string {
+	switch id {
+	case "reply":
+		switch lang {
+		case "zh-CN":
+			fallthrough
+		case "zh-TW":
+			return "把主人的 URL 🧹掃乾淨✨✨\n"
+		case "ja":
+			return "御主人様の URL を🧹綺麗にしました✨✨\n"
+		default:
+			return "I made🧹 Master's URL Clean✨✨\n"
+		}
+	default:
+		return ""
+	}
 }
