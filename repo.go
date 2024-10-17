@@ -14,7 +14,7 @@ import (
 
 const repo string = "https://rules2.clearurls.xyz/data.minify.json"
 
-var multiUrlsOnlyDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/[^\s]+)\s*$).+`, regexp2.Multiline)
+var multiUrlsOnlyDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\s*)+$).+`, regexp2.Multiline)
 var urlOnlyDetector = regexp2.MustCompile(`^https?://[^\s]+$`, regexp2.None)
 var urlExtractor = regexp2.MustCompile(`https?://[^\s]+`, regexp2.None)
 var paramExtracter = regexp2.MustCompile(`[?&]?([\w]+)=([\w-\.\*]+)`, regexp2.None)
