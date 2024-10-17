@@ -53,10 +53,12 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 
 		if is_redirect {
 			containsRedirect = true
+			log.Printf("\nFound Redirect: %s", urlMatch.String())
 		}
 
 		if processed != urlMatch.String() {
 			cleaned = true
+			log.Printf("\nCleaned: %s -> %s", urlMatch.String(), processed)
 		}
 
 		// Move to the next match (URL)
@@ -79,6 +81,7 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 			sb.WriteRune('\n')
 		}
 	}
+	log.Printf("---\n")
 
 	if containsRedirect {
 		sb.WriteString("↪️ Redirect Found / 此訊息包含自動轉址\n")
