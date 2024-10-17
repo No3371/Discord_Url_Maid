@@ -73,12 +73,18 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 		return
 	}
 
+	var written = make(map[string]struct{})
+
 	sb := strings.Builder{}
 
 	for url, processed := range urlMap {
-		if url != processed || cleaned {
+		if _, ok := written[url]; ok {
+			continue
+		}
+		if url != processed || cleaned { // Clean urls still gets written to recover embeds
 			sb.WriteString(processed)
 			sb.WriteRune('\n')
+			written[url] = struct{}{}
 		}
 	}
 	log.Printf("---\n")
