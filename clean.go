@@ -224,122 +224,122 @@ func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
 
 // cleanTrackingParams removes tracking parameters from any URLs in the message
 // CleanMessageAndReport function that processes a message string and cleans up URLs based on providers' rules
-func CleanMessageAndReport(message string, data *Data) string {
-	stats.TotalMessages++
-	// Find all URLs in the message
-	urlMatch, err := urlExtractor.FindStringMatch(message)
-	if err != nil {
-		log.Println("Failed to find URLs in message:", err)
-		return ""
-	}
+// func CleanMessageAndReport(message string, data *Data) string {
+// 	stats.TotalMessages++
+// 	// Find all URLs in the message
+// 	urlMatch, err := urlExtractor.FindStringMatch(message)
+// 	if err != nil {
+// 		log.Println("Failed to find URLs in message:", err)
+// 		return ""
+// 	}
 
-	containsRedirect := false
-	modified := false
-	reply := ""
+// 	containsRedirect := false
+// 	modified := false
+// 	reply := ""
 
-	// Loop through all matches (URLs)
-	for urlMatch != nil {
-		stats.TotalURLs++
-		urlStr := urlMatch.String()
-		urlModified := false
-		urlMatched := false
+// 	// Loop through all matches (URLs)
+// 	for urlMatch != nil {
+// 		stats.TotalURLs++
+// 		urlStr := urlMatch.String()
+// 		urlModified := false
+// 		urlMatched := false
 
-		// Loop through each provider
-		for name, provider := range data.Providers {
-			if urlMatched && !strings.HasPrefix(name, "globalRules") {
-				continue
-			}
+// 		// Loop through each provider
+// 		for name, provider := range data.Providers {
+// 			if urlMatched && !strings.HasPrefix(name, "globalRules") {
+// 				continue
+// 			}
 
-			if match, _ := provider.UrlPattern.MatchString(urlStr); !match {
-				continue // next provider
-			}
+// 			if match, _ := provider.UrlPattern.MatchString(urlStr); !match {
+// 				continue // next provider
+// 			}
 
-			if !strings.HasPrefix(name, "globalRules") {
-				urlMatched = true
-			}
+// 			if !strings.HasPrefix(name, "globalRules") {
+// 				urlMatched = true
+// 			}
 
-			for _, rdr := range provider.Redirections {
-				if ridrectFound, _ := rdr.MatchString(urlStr); ridrectFound {
-					stats.Redirects++
-					containsRedirect = true
-					continue
-				}
-			}
+// 			for _, rdr := range provider.Redirections {
+// 				if ridrectFound, _ := rdr.MatchString(urlStr); ridrectFound {
+// 					stats.Redirects++
+// 					containsRedirect = true
+// 					continue
+// 				}
+// 			}
 
-			// Skip URL if it matches any exception pattern
-			exceptionFound := false
-			for _, exception := range provider.Exceptions {
-				if exceptionMatch, _ := exception.MatchString(urlStr); exceptionMatch {
-					exceptionFound = true
-					break // next exception rule
-				}
-			}
-			if exceptionFound {
-				continue // next provider
-			}
+// 			// Skip URL if it matches any exception pattern
+// 			exceptionFound := false
+// 			for _, exception := range provider.Exceptions {
+// 				if exceptionMatch, _ := exception.MatchString(urlStr); exceptionMatch {
+// 					exceptionFound = true
+// 					break // next exception rule
+// 				}
+// 			}
+// 			if exceptionFound {
+// 				continue // next provider
+// 			}
 
-			paramMatch, err := paramExtracter.FindStringMatch(urlStr)
-			if err != nil {
-				log.Println("Failed to find parameters in URL:", err)
-				continue
-			}
+// 			paramMatch, err := paramExtracter.FindStringMatch(urlStr)
+// 			if err != nil {
+// 				log.Println("Failed to find parameters in URL:", err)
+// 				continue
+// 			}
 
-			// Loop through all query parameters
-			for paramMatch != nil {
-				stats.TotalParams++
-				// Extract the param key and value
-				paramName := paramMatch.GroupByNumber(1).String()
+// 			// Loop through all query parameters
+// 			for paramMatch != nil {
+// 				stats.TotalParams++
+// 				// Extract the param key and value
+// 				paramName := paramMatch.GroupByNumber(1).String()
 
-				// Check if the paramValue matches any of the provider's rules
-				for _, rule := range provider.Rules {
-					if match, _ := rule.MatchString(paramName); match {
-						// Remove or replace based on the initial character ('?' or '&')
-						if strings.HasPrefix(paramMatch.String(), "&") {
-							urlStr = strings.Replace(urlStr, paramMatch.String(), "", 1)
-						} else if strings.HasPrefix(paramMatch.String(), "?") {
-							urlStr = strings.Replace(urlStr, paramMatch.String(), "?", 1)
-						}
+// 				// Check if the paramValue matches any of the provider's rules
+// 				for _, rule := range provider.Rules {
+// 					if match, _ := rule.MatchString(paramName); match {
+// 						// Remove or replace based on the initial character ('?' or '&')
+// 						if strings.HasPrefix(paramMatch.String(), "&") {
+// 							urlStr = strings.Replace(urlStr, paramMatch.String(), "", 1)
+// 						} else if strings.HasPrefix(paramMatch.String(), "?") {
+// 							urlStr = strings.Replace(urlStr, paramMatch.String(), "?", 1)
+// 						}
 
-						stats.CleanedParams++
-						modified = true
-						urlModified = true
-						break
-					}
-				}
+// 						stats.CleanedParams++
+// 						modified = true
+// 						urlModified = true
+// 						break
+// 					}
+// 				}
 
-				paramMatch, err = paramExtracter.FindNextMatch(paramMatch)
-				if err != nil {
-					log.Println("Failed to find next parameter in URL:", err)
-				}
-			}
-		}
+// 				paramMatch, err = paramExtracter.FindNextMatch(paramMatch)
+// 				if err != nil {
+// 					log.Println("Failed to find next parameter in URL:", err)
+// 				}
+// 			}
+// 		}
 
-		if urlModified {
-			stats.CleanedURLs++
-			if urlStr[len(urlStr)-1] == '?' {
-				urlStr = urlStr[:len(urlStr)-1]
-			}
-			reply += urlStr + "\n"
-		}
+// 		if urlModified {
+// 			stats.CleanedURLs++
+// 			if urlStr[len(urlStr)-1] == '?' {
+// 				urlStr = urlStr[:len(urlStr)-1]
+// 			}
+// 			reply += urlStr + "\n"
+// 		}
 
-		// Move to the next match (URL)
-		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
-		if err != nil {
-			log.Println("Failed to find next URL in message:", err)
-		}
-	}
+// 		// Move to the next match (URL)
+// 		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
+// 		if err != nil {
+// 			log.Println("Failed to find next URL in message:", err)
+// 		}
+// 	}
 
-	if containsRedirect {
-		reply = reply + "↪️ Redirect Found / 此訊息包含自動轉址\n"
-	}
+// 	if containsRedirect {
+// 		reply = reply + "↪️ Redirect Found / 此訊息包含自動轉址\n"
+// 	}
 
-	if modified {
-		stats.CleanedMessages++
-	}
+// 	if modified {
+// 		stats.CleanedMessages++
+// 	}
 
-	if len(reply) > 0 && reply[len(reply)-1] == '\n' {
-		reply = reply[:len(reply)-1]
-	}
-	// Return the cleaned-up message
-	return reply
-}
+// 	if len(reply) > 0 && reply[len(reply)-1] == '\n' {
+// 		reply = reply[:len(reply)-1]
+// 	}
+// 	// Return the cleaned-up message
+// 	return reply
+// }
