@@ -14,10 +14,24 @@ import (
 
 const repo string = "https://rules2.clearurls.xyz/data.minify.json"
 
-var multiUrlsOnlyDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\s*)+$).+`, regexp2.Multiline)
-var urlOnlyDetector = regexp2.MustCompile(`^https?://[^\s]+$`, regexp2.None)
-var urlExtractor = regexp2.MustCompile(`https?://[^\s]+`, regexp2.None)
-var paramExtracter = regexp2.MustCompile(`[?&]?([\w]+)=([\w-\.\*]+)`, regexp2.None)
+// var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\.\S+\s*)+$).+`, regexp2.Multiline)
+var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:(?:\s*\|\|)?\s*https?:\/\/\S+\.\S+\s*(?:\|\|\s*)?)+$).+`, regexp2.Multiline) // This version handles discord spoiler syntax ||
+var urlOnlyDetector = regexp2.MustCompile(`^[^\S\r\n]*https?:\/\/\S+$`, regexp2.None)
+// var urlExtractor = regexp2.MustCompile(`https?://\S+\.\S+`, regexp2.None)
+var urlExtractor = regexp2.MustCompile(`https?:\/\/\S+?\.[^\s|]+|(?:\|\|\s*)?https?:\/\/\S+?\.[^\s|]+(?:[^\S\r\n]*\|\|)?`, regexp2.None) // [^\s|]+ for Discord
+var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*]+)`, regexp2.None)
+var spoilerExtractor = regexp2.MustCompile(`(?<=\|\|\s*)https?:\/\/\S+(?=\s*\|\|)`, regexp2.None)
+
+func Despoil(src string) string {
+	spoilerMatch, err := spoilerExtractor.FindStringMatch(src)
+	if err != nil {
+		return src
+	}
+	if spoilerMatch != nil  {
+		return spoilerMatch.String()
+	}
+	return src
+}
 
 // Provider represents a single provider from the ClearURLs data
 type Provider struct {
@@ -37,6 +51,7 @@ type rawProvider struct {
 
 // Data represents the full JSON structure with all providers
 type Data struct {
+	GlobalRules Provider
 	Providers map[string]Provider `json:"providers"`
 }
 
@@ -109,6 +124,9 @@ func FetchAndLoadJSON(url string) (*Data, error) {
 		data.Providers[key] = provider
 	}
 
+	data.GlobalRules = data.Providers["globalRules"]
+	delete(data.Providers, "globalRules")
+
 	f, err = os.Open(CUSTOM_RULES_FILE)
 	if err != nil {
 		return &data, nil
@@ -134,8 +152,15 @@ func FetchAndLoadJSON(url string) (*Data, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to make provider %s: %v", key, err)
 		}
-		// Add compiled provider to the map
-		data.Providers[key] = provider
+
+		if key == "globalRules" && provider.UrlPattern.String() == data.GlobalRules.UrlPattern.String() {
+			data.GlobalRules.Rules = append(data.GlobalRules.Rules, provider.Rules...)
+			data.GlobalRules.Exceptions = append(data.GlobalRules.Exceptions, provider.Exceptions...)
+			data.GlobalRules.Redirections = append(data.GlobalRules.Redirections, provider.Redirections...)
+		} else {
+			// Add compiled provider to the map
+			data.Providers[key] = provider
+		}
 	}
 
 	return &data, nil

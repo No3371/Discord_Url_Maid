@@ -1,7 +1,7 @@
 {
     "providers": {
-        "globalRules_custom": {
-            "urlPattern": ".+",
+        "globalRules": {
+            "urlPattern": ".*",
             "rules": [
                 "gad_source"
             ]

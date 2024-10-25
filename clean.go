@@ -19,19 +19,19 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 
 	stats.TotalMessages++
 
-	notUrlOnly, err := multiUrlsOnlyDetector.MatchString(message.Content)
+	notUrlOnly, err := impureUrlsDetector.MatchString(message.Content)
 	if err != nil {
 		log.Println("Failed to detect if message is URL only:", err)
 	}
-    err = nil
+	err = nil
 
 	// if notUrlOnly {
-    //     notUrlOnly, err = urlOnlyDetector.MatchString(message.Content)
-    //     if err != nil {
-    //         log.Println("Failed to detect if message is URL only:", err)
-    //     }
+	//     notUrlOnly, err = urlOnlyDetector.MatchString(message.Content)
+	//     if err != nil {
+	//         log.Println("Failed to detect if message is URL only:", err)
+	//     }
 	// }
-    // err = nil
+	// err = nil
 
 	// Find all URLs in the message
 	urlMatch, err := urlExtractor.FindStringMatch(message.Content)
@@ -48,25 +48,31 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 
 	// Loop through all matches (URLs)
 	for urlMatch != nil {
-		processed, is_redirect := CleanUrl(urlMatch.String(), data)
-		urlMap[urlMatch.String()] = processed
+		
+		matched := urlMatch.String()
+		url := matched
+		
+		processed, is_redirect := CleanUrl(url, data)
+		
 
 		if is_redirect {
 			containsRedirect = true
-			log.Printf("\nFound Redirect: %s", urlMatch.String())
+			log.Printf("\nFound Redirect: %s", url)
 		}
 
 		if processed != urlMatch.String() {
 			cleaned = true
-			log.Printf("\nCleaned: %s -> %s", urlMatch.String(), processed)
+			log.Printf("\nCleaned: %s -> %s", url, processed)
 		}
 
+
+		urlMap[url] = processed
 		// Move to the next match (URL)
 		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
 		if err != nil {
 			log.Println("Failed to find next URL in message:", err)
 		}
-        err = nil
+		err = nil
 	}
 
 	if !cleaned && !containsRedirect {
@@ -137,98 +143,109 @@ func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.Stat
 	if err != nil {
 		log.Printf("Failed to reply: %v", err)
 	}
-    err = nil
+	err = nil
 
 	if cleaned && !notUrlOnly {
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
 		}
-        err = nil
+		err = nil
 	}
 }
 
 func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
-	siteRulesApplied := false
+
+	original := url
+	despoiled := Despoil(url)
+	if despoiled != original {
+		url = despoiled
+	}
+
 	processed = url
 
 	// Loop through each provider
-	for name, provider := range data.Providers {
-		// Optimization: Skip site rules if already applied
-		if siteRulesApplied && !strings.HasPrefix(name, "globalRules") {
-			continue
-		}
-
-		if match, _ := provider.UrlPattern.MatchString(processed); !match {
-			continue // next provider
-		}
-
-		if !strings.HasPrefix(name, "globalRules") {
-			siteRulesApplied = true
-		}
-
-		for _, rdr := range provider.Redirections {
-			if ridrectFound, _ := rdr.MatchString(processed); ridrectFound {
-				stats.Redirects++
-				is_redirect = true
-				continue
-			}
-		}
-
-		// Skip URL if it matches any exception pattern
-		exceptionFound := false
-		for _, exception := range provider.Exceptions {
-			if exceptionMatch, _ := exception.MatchString(processed); exceptionMatch {
-				exceptionFound = true
-				break // next exception rule
-			}
-		}
-		if exceptionFound {
-			continue // next provider
-		}
-
-		paramMatch, err := paramExtracter.FindStringMatch(processed)
-		if err != nil {
-			log.Println("Failed to find parameters in URL:", err)
-			continue
-		}
-
-		// Loop through all query parameters
-		for paramMatch != nil {
-			stats.TotalParams++
-			// Extract the param key and value
-			paramName := paramMatch.GroupByNumber(1).String()
-
-			// Check if the paramValue matches any of the provider's rules
-			for _, rule := range provider.Rules {
-				if match, _ := rule.MatchString(paramName); match {
-					// Remove or replace based on the initial character ('?' or '&')
-					if strings.HasPrefix(paramMatch.String(), "&") {
-						processed = strings.Replace(processed, paramMatch.String(), "", 1)
-					} else if strings.HasPrefix(paramMatch.String(), "?") {
-						processed = strings.Replace(processed, paramMatch.String(), "?", 1)
-					}
-
-					stats.CleanedParams++
-					break
-				}
-			}
-
-			paramMatch, err = paramExtracter.FindNextMatch(paramMatch)
-			if err != nil {
-				log.Println("Failed to find next parameter in URL:", err)
-			}
+	for _, provider := range data.Providers {
+		processed, is_redirect = applyRules(provider, processed, is_redirect)
+		if processed != url {
+			break
 		}
 	}
 
+	// Always apply global rules
+	processed, is_redirect = applyRules(data.GlobalRules, processed, is_redirect)
+
 	if processed != url {
 		stats.CleanedURLs++
-		if processed[len(processed)-1] == '?' {
+		if len(processed) > 0 && processed[len(processed)-1] == '?' {
 			processed = processed[:len(processed)-1]
 		}
 	}
 
+	if despoiled != original {
+		processed = strings.Replace(original, despoiled, processed, 1)
+	}
+
 	return processed, is_redirect
+}
+
+func applyRules(provider Provider, url string, is_redirect bool) (string, bool) {
+
+	if match, _ := provider.UrlPattern.MatchString(url); !match {
+		return url, is_redirect
+	}
+
+	for _, rdr := range provider.Redirections {
+		if ridrectFound, _ := rdr.MatchString(url); ridrectFound {
+			stats.Redirects++
+			is_redirect = true
+			continue
+		}
+	}
+
+	exceptionFound := false
+	for _, exception := range provider.Exceptions {
+		if exceptionMatch, _ := exception.MatchString(url); exceptionMatch {
+			exceptionFound = true
+			break
+		}
+	}
+	if exceptionFound {
+		return url, is_redirect
+	}
+
+	paramMatch, err := paramExtracter.FindStringMatch(url)
+	if err != nil {
+		log.Println("Failed to find parameters in URL:", err)
+		return url, is_redirect
+	}
+
+
+	for paramMatch != nil {
+		stats.TotalParams++
+		var matchedParam string = paramMatch.String()
+		paramName := paramMatch.GroupByNumber(1).String()
+
+		for _, rule := range provider.Rules {
+			if match, _ := rule.MatchString(paramName); match {
+
+				if strings.HasPrefix(matchedParam, "&") {
+					url = strings.Replace(url, matchedParam, "", 1)
+				} else if strings.HasPrefix(matchedParam, "?") {
+					url = strings.Replace(url, matchedParam, "?", 1)
+				}
+
+				stats.CleanedParams++
+				break
+			}
+		}
+
+		paramMatch, err = paramExtracter.FindNextMatch(paramMatch)
+		if err != nil {
+			log.Println("Failed to find next parameter in URL:", err)
+		}
+	}
+	return url, is_redirect
 }
 
 // cleanTrackingParams removes tracking parameters from any URLs in the message
