@@ -11,7 +11,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/state"
 )
 
-func CleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
+func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
 	// Ignore bot messages
 	if message.Author.Bot {
 		return

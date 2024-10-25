@@ -53,7 +53,7 @@ func main() {
 	s.AddHandler(
 		// MessageCreate is called every time a message is sent in a server the bot has access to
 		func(m *gateway.MessageCreateEvent) {
-			CleanMessage(m, b, s)
+			TryCleanMessage(m, b, s)
 		},
 	)
 
