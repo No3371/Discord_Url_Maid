@@ -18,7 +18,7 @@ const repo string = "https://rules2.clearurls.xyz/data.minify.json"
 var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:(?:\s*\|\|)?\s*https?:\/\/\S+\.\S+\s*(?:\|\|\s*)?)+$).+`, regexp2.Multiline) // This version handles discord spoiler syntax ||
 var urlOnlyDetector = regexp2.MustCompile(`^[^\S\r\n]*https?:\/\/\S+$`, regexp2.None)
 // var urlExtractor = regexp2.MustCompile(`https?://\S+\.\S+`, regexp2.None)
-var urlExtractor = regexp2.MustCompile(`https?:\/\/\S+?\.[^\s|]+|(?:\|\|\s*)?https?:\/\/\S+?\.[^\s|]+(?:[^\S\r\n]*\|\|)?`, regexp2.None) // [^\s|]+ for Discord
+var urlExtractor = regexp2.MustCompile(`(?:\|\|\s*)https?:\/\/\S+?\.[^\s|]+(?:\s*\|\|)|https?:\/\/\S+?\.[^\s|]+`, regexp2.None) // [^\s|]+ for Discord
 var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*]+)`, regexp2.None)
 var spoilerExtractor = regexp2.MustCompile(`(?<=\|\|\s*)https?:\/\/\S+(?=\s*\|\|)`, regexp2.None)
 

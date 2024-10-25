@@ -122,6 +122,11 @@ func TestUrlExtractor(t *testing.T) {
 			args: args{input: "Multiple ||https://example.com|| ||https://test.com|| links."},
 			want: []string{"||https://example.com||", "||https://test.com||"},
 		},
+		{
+			name: "Heading spoiler syntax",
+			args: args{input: "||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI"},
+			want: []string{"https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
