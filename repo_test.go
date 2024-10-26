@@ -45,16 +45,20 @@ func TestURLOnly(t *testing.T) {
 		https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH
 		https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH
 		https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH`}, true},
-		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH  https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH ||"}, true },
-		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH |||| https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH ||"}, true },
-		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH  https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH a ||"}, false },
+		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH  https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH ||"}, true},
+		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH |||| https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH ||"}, true},
+		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH  https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH a ||"}, false},
+		{"test", args{"||https://www.youtube.com/live/bWgxzE8J0i8?si=uEdOSrcqdVINSDkH"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			notUrlOnly, err := impureUrlsDetector.MatchString(tt.args.url)
+			deSpoiled, err := spoilerFinder.Replace(tt.args.url, " $1 ", -1, -1)
+			if err != nil {
+				t.Errorf("Failed to despoil message: %e", err)
+			}
+			notUrlOnly, err := impureUrlsDetector.MatchString(deSpoiled)
 			if err != nil {
 				t.Errorf("Failed to detect if message is URL only: %v", err)
-				t.Fail()
 			}
 			if !notUrlOnly != tt.want {
 				t.Errorf("%s: %v, want %v", tt.args.url, !notUrlOnly, tt.want)
@@ -62,96 +66,206 @@ func TestURLOnly(t *testing.T) {
 		})
 	}
 }
-
-func TestUrlExtractor(t *testing.T) {
+func TestSpoilerFinder(t *testing.T) {
 	type args struct {
 		input string
 	}
 	tests := []struct {
 		name string
 		args args
-		want []string
+		want string
 	}{
 		{
-			name: "Single URL",
-			args: args{input: "Check out this link: https://example.com/page"},
-			want: []string{"https://example.com/page"},
+			name: "||||",
+			args: args{input: "||||"},
+			want: "",
 		},
 		{
-			name: "Multiple URLs",
-			args: args{input: "Here are two links: https://example.com and https://test.com/page"},
-			want: []string{"https://example.com", "https://test.com/page"},
+			name: "||||a",
+			args: args{input: "||||"},
+			want: "",
 		},
 		{
-			name: "URL with Discord spoiler",
-			args: args{input: "Secret link ||https://secret.com|| is hidden"},
-			want: []string{"||https://secret.com||"},
+			name: "||||a||",
+			args: args{input: "||||a||"},
+			want: "||||a||",
 		},
 		{
-			name: "Mixed URLs with and without spoilers",
-			args: args{input: "Public link https://public.com and secret ||https://secret.com||"},
-			want: []string{"https://public.com", "||https://secret.com||"},
+			name: `||\n||||a`,
+			args: args{input: `||
+||||a`},
+			want: `||
+||`,
 		},
 		{
-			name: "No URLs",
-			args: args{input: "This string contains no links."},
-			want: []string{},
+			name: "||||||a",
+			args: args{input: "||||||a"},
+			want: "|||||",
 		},
 		{
-			name: "Invalid URLs",
-			args: args{input: "Invalid link https:/bad.com and valid https://good.com"},
-			want: []string{"https://good.com"},
+			name: "|| ||a| ||",
+			args: args{input: "|| ||a| ||"},
+			want: "|| ||",
 		},
 		{
-			name: "Multiple URLs with various formats",
-			args: args{input: "Links: ||https://example.com||, https://test.com/page, and ||https://another.com||"},
-			want: []string{"||https://example.com||", "https://test.com/page", "||https://another.com||"},
-		},
-		{
-			name: "URLs with trailing characters",
-			args: args{input: "Check these: https://example.com/page?param=value, ||https://secret.com||!"},
-			want: []string{"https://example.com/page?param=value", "||https://secret.com||"},
-		},
-		{
-			name: "URLs separated by newlines",
-			args: args{input: "First link: https://first.com\nSecond link: ||https://second.com||"},
-			want: []string{"https://first.com", "||https://second.com||"},
-		},
-		{
-			name: "URLs with pipe characters",
-			args: args{input: "Multiple ||https://example.com|| ||https://test.com|| links."},
-			want: []string{"||https://example.com||", "||https://test.com||"},
-		},
-		{
-			name: "Heading spoiler syntax",
-			args: args{input: "||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI"},
-			want: []string{"https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI"},
+			name: "||||a| ||",
+			args: args{input: "||||a| ||"},
+			want: "||||a| ||",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got []string
-			m, err := urlExtractor.FindStringMatch(tt.args.input)
+			var got string
+			m, err := spoilerFinder.FindStringMatch(tt.args.input)
 			if err != nil {
-				t.Errorf("urlExtractor.FindStringMatch() error = %v", err)
+				t.Errorf("spoilerExtractor.FindStringMatch() error = %v", err)
 				return
 			}
-			for m != nil {
-				got = append(got, m.String())
-				m, err = urlExtractor.FindNextMatch(m)
-				if err != nil {
-					t.Errorf("urlExtractor.FindNextMatch() error = %v", err)
-					break
+			if m == nil {
+				if tt.want == "" {
+					return
 				}
-			}
 
-			if len(got) != len(tt.want) {
-				t.Errorf("Number of matches = %d, want %d", len(got), len(tt.want))
+				t.Errorf("No match found")
+				return
 			}
-			for i := range tt.want {
-				if i >= len(got) || got[i] != tt.want[i] {
-					t.Errorf("Match %d = \"%v\", want \"%v\"", i, got[i], tt.want[i])
-				}
+			got = m.String()
+			if got != tt.want {
+				t.Errorf("Match = \"%v\", want \"%v\"", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEnforceSpoilerEdges(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "",
+			args: args{input: "||https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770||"},
+			want: "|| https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770 ||",
+		},
+		{
+			name: "|||||",
+			args: args{input: "|||||"},
+			want: "|| | ||",
+		},
+		{
+			name: "||||",
+			args: args{input: "||||"},
+			want: "||||", // NO CHANGE
+		},
+		{
+			name: "|| ||",
+			args: args{input: "|| ||"},
+			want: "||   ||",
+		},
+		{
+			name: "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+			args: args{input: "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770"},
+			want: "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m, err := enforceSpoilerPadding(tt.args.input)
+			if err != nil {
+				t.Errorf("spoilerSpaceEdgeInserter.FindStringMatch() error = %v", err)
+				return
+			}
+			if m != tt.want {
+				t.Errorf("Match = \"%v\", want \"%v\"", m, tt.want)
+			}
+		})
+	}
+}
+
+func TestDespoil(t *testing.T) {
+	type args struct {
+		input string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "Pad single spoiler",
+			args: args{
+				input: "||spoiler||",
+			},
+			want:    " spoiler ",
+			wantErr: false,
+		},
+		{
+			name: "Pad multiple spoilers",
+			args: args{
+				input: "Here are two spoilers: ||first|| and ||second||.",
+			},
+			want:    "Here are two spoilers:  first  and  second .",
+			wantErr: false,
+		},
+		{
+			name: "No spoilers present",
+			args: args{
+				input: "This string has no spoilers.",
+			},
+			want:    "This string has no spoilers.",
+			wantErr: false,
+		},
+		{
+			name: "Empty spoiler",
+			args: args{
+				input: "||||",
+			},
+			want:    "||||",
+			wantErr: false,
+		},
+		{
+			name: "Spoiler with spaces",
+			args: args{
+				input: "||  spoiler with spaces  ||",
+			},
+			want:    "   spoiler with spaces   ",
+			wantErr: false,
+		},
+		{
+			name: "Nested spoilers",
+			args: args{
+				input: "||outer ||inner|| outer||",
+			},
+			want:    " outer  inner  outer ",
+			wantErr: false,
+		},
+		{
+			name: "Complex",
+			args: args{
+				input: `https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||
+
+https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI||  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||        ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  a || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI a  a   a ||`,
+			},
+			want:    `https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI   
+
+https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI   https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI     https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI     https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI           https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    a   https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI       https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI a  a   a ||`,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := spoilerFinder.Replace(tt.args.input, " $1 ", -1, -1)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Replace() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Replace() = \"%v\", want \"%v\"", got, tt.want)
 			}
 		})
 	}
