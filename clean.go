@@ -145,7 +145,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	}
 	err = nil
 
-	if cleaned && !notUrlOnly {
+	if cleaned && !notUrlOnly && !containsRedirect {
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
