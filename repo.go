@@ -14,24 +14,40 @@ import (
 
 const repo string = "https://rules2.clearurls.xyz/data.minify.json"
 
-// var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\.\S+\s*)+$).+`, regexp2.Multiline)
-var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:(?:\s*\|\|)?\s*https?:\/\/\S+\.\S+\s*(?:\|\|\s*)?)+$).+`, regexp2.Multiline) // This version handles discord spoiler syntax ||
-var urlOnlyDetector = regexp2.MustCompile(`^[^\S\r\n]*https?:\/\/\S+$`, regexp2.None)
-// var urlExtractor = regexp2.MustCompile(`https?://\S+\.\S+`, regexp2.None)
-var urlExtractor = regexp2.MustCompile(`(?:\|\|\s*)https?:\/\/\S+?\.[^\s|]+(?:\s*\|\|)|https?:\/\/\S+?\.[^\s|]+`, regexp2.None) // [^\s|]+ for Discord
-var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*]+)`, regexp2.None)
-var spoilerExtractor = regexp2.MustCompile(`(?<=\|\|\s*)https?:\/\/\S+(?=\s*\|\|)`, regexp2.None)
+var spoilerFinder = regexp2.MustCompile(`\|\|(\s*?[\s\S]+?\s*)\|\|`, regexp2.None)
 
-func Despoil(src string) string {
-	spoilerMatch, err := spoilerExtractor.FindStringMatch(src)
-	if err != nil {
-		return src
-	}
-	if spoilerMatch != nil  {
-		return spoilerMatch.String()
-	}
-	return src
+func enforceSpoilerPadding(src string) (string, error) {
+	return spoilerFinder.Replace(src, "|| $1 ||", -1, -1)
 }
+
+var connectedUrlFinder = regexp2.MustCompile(`https?:\/\/\S+?(?=https?:\/\/)`, regexp2.None)
+
+var linebreaksFinder = regexp2.MustCompile(`\r?\n|\r`, regexp2.None)
+
+// var spoilerExtractor = regexp2.MustCompile(`\|\|(\s*?[\s\S]+?\s*)\|\|`, regexp2.None)
+// var spoilerExtractor = regexp2.MustCompile(`\|\|\s*(.+?)\s*\|\|`, regexp2.None)
+
+var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\.\S+\s*)+$).+`, regexp2.Multiline)
+
+// var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:(?:\s*\|\|)?\s*https?:\/\/\S+\.\S+\s*(?:\|\|\s*)?)+$).+`, regexp2.Multiline) // This version handles discord spoiler syntax ||
+// var urlOnlyDetector = regexp2.MustCompile(`^[^\S\r\n]*https?:\/\/\S+$`, regexp2.None)
+var urlExtractor = regexp2.MustCompile(`https?:\/\/\S+\.\S+`, regexp2.None)
+
+// var urlExtractor = regexp2.MustCompile(`(?:\|\|\s*)https?:\/\/\S+?\.[^\s|]+(?:\s*\|\|)|https?:\/\/\S+?\.[^\s|]+`, regexp2.None) // [^\s|]+ for Discord
+var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*]+)`, regexp2.None)
+
+// var spoilerExtractor = regexp2.MustCompile(`(?<=\|\|\s*)https?:\/\/\S+(?=\s*\|\|)`, regexp2.None) // \|\|\s*(https?:\/\/\S+?)\s*\|\|
+
+// func Despoil(src string) string {
+// 	spoilerMatch, err := spoilerExtractor.FindStringMatch(src)
+// 	if err != nil {
+// 		return src
+// 	}
+// 	if spoilerMatch != nil {
+// 		return spoilerMatch.String()
+// 	}
+// 	return src
+// }
 
 // Provider represents a single provider from the ClearURLs data
 type Provider struct {
@@ -52,7 +68,7 @@ type rawProvider struct {
 // Data represents the full JSON structure with all providers
 type Data struct {
 	GlobalRules Provider
-	Providers map[string]Provider `json:"providers"`
+	Providers   map[string]Provider `json:"providers"`
 }
 
 const ONLINE_RULES_FILE = "clear_urls_rules.json"

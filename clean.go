@@ -11,6 +11,13 @@ import (
 	"github.com/diamondburned/arikawa/v3/state"
 )
 
+
+type processedUrl struct {
+	Url       string
+	IsSpoiler bool
+	IsRedirect bool
+}
+
 func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
 	// Ignore bot messages
 	if message.Author.Bot {
@@ -19,104 +26,17 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 
 	stats.TotalMessages++
 
-	notUrlOnly, err := impureUrlsDetector.MatchString(message.Content)
+	urlMap, cleaned, containsRedirect, notUrlOnly, err := TryCleanString(message.Content, data)
 	if err != nil {
-		log.Println("Failed to detect if message is URL only:", err)
-	}
-	err = nil
-
-	// if notUrlOnly {
-	//     notUrlOnly, err = urlOnlyDetector.MatchString(message.Content)
-	//     if err != nil {
-	//         log.Println("Failed to detect if message is URL only:", err)
-	//     }
-	// }
-	// err = nil
-
-	// Find all URLs in the message
-	urlMatch, err := urlExtractor.FindStringMatch(message.Content)
-	if err != nil {
-		log.Println("Failed to find URLs in message:", err)
+		log.Println("Failed to clean message:", err)
 		return
-	}
-
-	containsRedirect := false
-	cleaned := false
-	var replyString string
-
-	var urlMap = make(map[string]string)
-
-	// Loop through all matches (URLs)
-	for urlMatch != nil {
-		
-		matched := urlMatch.String()
-		url := matched
-		
-		processed, is_redirect := CleanUrl(url, data)
-		
-
-		if is_redirect {
-			containsRedirect = true
-			log.Printf("\nFound Redirect: %s", url)
-		}
-
-		if processed != urlMatch.String() {
-			cleaned = true
-			log.Printf("\nCleaned: %s -> %s", url, processed)
-		}
-
-
-		urlMap[url] = processed
-		// Move to the next match (URL)
-		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
-		if err != nil {
-			log.Println("Failed to find next URL in message:", err)
-		}
-		err = nil
 	}
 
 	if !cleaned && !containsRedirect {
 		return
 	}
 
-	var written = make(map[string]struct{})
-
-	sb := strings.Builder{}
-
-	for url, processed := range urlMap {
-		if _, ok := written[url]; ok {
-			continue
-		}
-		if url != processed || cleaned { // Clean urls still gets written to recover embeds
-			sb.WriteString(processed)
-			sb.WriteRune('\n')
-			written[url] = struct{}{}
-		}
-	}
-	log.Printf("---\n")
-
-	if containsRedirect {
-		sb.WriteString("↪️ Redirect Found / 此訊息包含自動轉址\n")
-	}
-
-	if cleaned {
-		stats.CleanedMessages++
-	}
-
-	replyString = sb.String()
-	if len(replyString) > 0 && replyString[len(replyString)-1] == '\n' {
-		replyString = replyString[:len(replyString)-1]
-	}
-
-	edit := api.EditMessageData{}
-	edit.Flags = new(discord.MessageFlags)
-	*edit.Flags = message.Flags
-	*edit.Flags |= discord.SuppressEmbeds
-	_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
-	if err != nil {
-		log.Printf("Failed to edit message: %v", err)
-		return
-	}
+	replyString := PrepareReply(urlMap, containsRedirect, cleaned)
 
 	msgData := api.SendMessageData{
 		AllowedMentions: allowedMentions,
@@ -126,6 +46,13 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 			GuildID:   message.GuildID,
 		},
 		Flags: discord.SuppressNotifications,
+		// Components: discord.Components (
+		// 	&discord.ButtonComponent{
+		// 		Label: "♻️",
+		// 		Style: discord.SecondaryButtonStyle,
+		// 		CustomID: "clean_message",
+		// 	},
+		// ),
 	}
 
 	if notUrlOnly {
@@ -151,16 +78,164 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 			log.Printf("Failed to delete message: %v", err)
 		}
 		err = nil
+		return
+	}
+
+	edit := api.EditMessageData{}
+	edit.Flags = new(discord.MessageFlags)
+	*edit.Flags = message.Flags
+	*edit.Flags |= discord.SuppressEmbeds
+	_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
+	if err != nil {
+		log.Printf("Failed to edit message: %v", err)
+		return
 	}
 }
 
-func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
+func PrepareReply(urlMap map[string]processedUrl, containsRedirect bool, cleaned bool) string {
+	sb := strings.Builder{}
 
-	original := url
-	despoiled := Despoil(url)
-	if despoiled != original {
-		url = despoiled
+	for _, processed := range urlMap {
+		if processed.IsRedirect {
+			continue
+		}
+		if processed.IsSpoiler {
+			sb.WriteString("||")
+		}
+		sb.WriteString(processed.Url)
+		if processed.IsSpoiler {
+			sb.WriteString("||")
+		}
+		sb.WriteRune('\n')
 	}
+	log.Printf("---\n")
+
+	if containsRedirect {
+		sb.WriteString("↪️ Redirect Found / 此訊息包含自動轉址（將經由該站點轉向未知站點）\n")
+	}
+
+	if cleaned {
+		stats.CleanedMessages++
+	}
+
+	replyString := sb.String()
+	if len(replyString) > 0 && replyString[len(replyString)-1] == '\n' {
+		replyString = replyString[:len(replyString)-1]
+	}
+	return replyString
+}
+
+func TryCleanString(str string, data *Data) (urlMap map[string]processedUrl, cleaned bool, containsRedirect bool, notUrlOnly bool, err error) {
+
+	str, err = connectedUrlFinder.Replace(str, "$& ", -1, -1)
+	if err != nil {
+		log.Println("Failed to fix connected URLs:", err)
+		return
+	}
+
+	deSpoiled, err := spoilerFinder.Replace(str, " $1 ", -1, -1)
+	if err != nil {
+		log.Println("Failed to despoil message:", err)
+		return
+	}
+	notUrlOnly, err = impureUrlsDetector.MatchString(deSpoiled)
+	if err != nil {
+		log.Println("Failed to detect if message is URL only:", err)
+	}
+	err = nil
+
+	// if notUrlOnly {
+	//     notUrlOnly, err = urlOnlyDetector.MatchString(message.Content)
+	//     if err != nil {
+	//         log.Println("Failed to detect if message is URL only:", err)
+	//     }
+	// }
+	// err = nil
+
+	messageContent := str
+	messageContent, err = enforceSpoilerPadding(messageContent)
+	if err != nil {
+		log.Println("Failed to ensure spoiler edge:", err)
+		messageContent = str // failsafe
+	}
+
+	// Find all URLs in the message
+	urlMatch, err := urlExtractor.FindStringMatch(messageContent)
+	if err != nil {
+		log.Println("Failed to find URLs in message:", err)
+		return
+	}
+
+	var cleanedLookup map[string]string
+
+	// Loop through all matches (URLs)
+	for urlMatch != nil {
+
+		matched := urlMatch.String()
+		url := matched
+
+		processed, is_redirect := CleanUrl(url, data)
+
+		if cleanedLookup == nil {
+			cleanedLookup = make(map[string]string)
+		}
+		if _, ok := cleanedLookup[processed]; !ok {
+			if is_redirect {
+				containsRedirect = true
+				log.Printf("\nFound Redirect: %s", url)
+			}
+	
+			if processed != urlMatch.String() {
+				cleaned = true
+				log.Printf("\nCleaned: %s -> %s", url, processed)
+				cleanedLookup[processed] = url
+			}
+			if urlMap == nil {
+				urlMap = make(map[string]processedUrl)
+			}
+			urlMap[url] = processedUrl{Url: processed, IsSpoiler: false, IsRedirect: is_redirect}
+		}
+
+		// Move to the next match (URL)
+		urlMatch, err = urlExtractor.FindNextMatch(urlMatch)
+		if err != nil {
+			log.Println("Failed to find next URL in message:", err)
+		}
+		err = nil
+	}
+
+
+	if !cleaned && !containsRedirect {
+		return
+	}
+
+	// Check for urls in spoilers
+	// Loop through all spoiler blocks and check if the processed urls are contained
+	spoilerMatch, err := spoilerFinder.FindStringMatch(messageContent)
+	if err != nil {
+		log.Println("Failed to find spoilers in message:", err)
+		return
+	}
+	for spoilerMatch != nil {
+		spoiler := spoilerMatch.String()
+
+		for k, url := range urlMap {
+			if strings.Contains(spoiler, url.Url) {
+				urlMap[k] = processedUrl{Url: url.Url, IsSpoiler: true}
+			}
+		}
+
+		spoilerMatch, err = spoilerFinder.FindNextMatch(spoilerMatch)
+		if err != nil {
+			log.Println("Failed to find spoilers in message:", err)
+			break
+		}
+	}
+
+	return
+}
+
+func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
 
 	processed = url
 
@@ -180,10 +255,6 @@ func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
 		if len(processed) > 0 && processed[len(processed)-1] == '?' {
 			processed = processed[:len(processed)-1]
 		}
-	}
-
-	if despoiled != original {
-		processed = strings.Replace(original, despoiled, processed, 1)
 	}
 
 	return processed, is_redirect
@@ -219,7 +290,6 @@ func applyRules(provider Provider, url string, is_redirect bool) (string, bool) 
 		log.Println("Failed to find parameters in URL:", err)
 		return url, is_redirect
 	}
-
 
 	for paramMatch != nil {
 		stats.TotalParams++
