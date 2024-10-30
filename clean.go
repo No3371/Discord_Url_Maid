@@ -196,6 +196,12 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 		messageContent = str // failsafe
 	}
 
+	messageContent, err = enforceMaskedLinkPadding(messageContent)
+	if err != nil {
+		log.Println("Failed to ensure spoiler edge:", err)
+		messageContent = str // failsafe
+	}
+
 	// Find all URLs in the message
 	urlMatch, err := urlExtractor.FindStringMatch(messageContent)
 	if err != nil {

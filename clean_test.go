@@ -142,6 +142,26 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			wantNotUrlOnly: false,
 			wantErr:        false,
 		},
+		{
+			name: "Masks",
+			args: args{
+				str: `[ 123 ](https://123.com)`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://123.com",
+					Processed:  "https://123.com",
+					IsSpoiler:  false,
+					IsRedirect: false,
+					Mask: " 123 ",
+				},
+			},
+			wantCleaned:    0,
+			wantRedirects:  0,
+			wantMasks:      1,
+			wantNotUrlOnly: true,
+			wantErr:        false,
+		},
 	}
 	providers, err := FetchAndLoadJSON(repo)
 	if err != nil {
