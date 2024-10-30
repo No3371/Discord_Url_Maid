@@ -59,6 +59,10 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		// ),
 	}
 
+	if cleaned == 0 {
+		msgData.Flags = discord.SuppressNotifications | discord.SuppressEmbeds
+	}
+
 	if notUrlOnly {
 		msgData.Content = replyString
 		msgData.Reference = nil
