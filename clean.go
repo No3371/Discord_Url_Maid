@@ -12,7 +12,7 @@ import (
 )
 
 type processedUrl struct {
-	Raw string
+	Raw        string
 	Processed  string
 	IsSpoiler  bool
 	IsRedirect bool
@@ -187,14 +187,6 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 	}
 	err = nil
 
-	// if notUrlOnly {
-	//     notUrlOnly, err = urlOnlyDetector.MatchString(message.Content)
-	//     if err != nil {
-	//         log.Println("Failed to detect if message is URL only:", err)
-	//     }
-	// }
-	// err = nil
-
 	messageContent := str
 	messageContent, err = enforceSpoilerPadding(messageContent)
 	if err != nil {
@@ -218,7 +210,8 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 	var cleanedLookup map[string]string
 
 	// Loop through all matches (URLs)
-	urlLoop: for urlMatch != nil {
+urlLoop:
+	for urlMatch != nil {
 
 		matched := urlMatch.String()
 
@@ -245,7 +238,6 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 			result := processedUrl{Raw: matched, Processed: processed, IsSpoiler: false, IsRedirect: is_redirect}
 			for _, url := range urlMap {
 				if url.Raw == matched {
-					result = url
 					break urlLoop
 				}
 			}
@@ -282,7 +274,7 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 		}
 	}
 
-	if cleaned == 0 && redirects == 0 && masks == 0{
+	if cleaned == 0 && redirects == 0 && masks == 0 {
 		return
 	}
 

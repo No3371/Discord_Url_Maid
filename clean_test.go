@@ -82,11 +82,11 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 		{
 			name: "test",
 			args: args{
-				str: `到底要多久https://x.com/horo_27/status/1845408056445972628?s=19
+				str: `[到底要多久](https://x.com/horo_27/status/1845408056445972628?s=19)
 https://twitcasting.tv/kurokumo_01?t=你好 a
 https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
 https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML
-https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1 
+https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1
 
 到底要多久`,
 			},
@@ -95,6 +95,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 					Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
 					Processed: "https://x.com/horo_27/status/1845408056445972628",
 					IsSpoiler: false,
+					Mask: "到底要多久",
 				}, // V
 				{
 					Raw:       "https://twitcasting.tv/kurokumo_01?t=你好",
@@ -119,7 +120,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			},
 			wantCleaned:    3,
 			wantRedirects:  0,
-			wantMasks:      0,
+			wantMasks:      1,
 			wantNotUrlOnly: true,
 			wantErr:        false,
 		},
@@ -175,7 +176,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 				return
 			}
 			if !reflect.DeepEqual(gotUrlMap, tt.wantUrlMap) {
-				t.Errorf("TryCleanString() gotUrlMap = %v, want %v", gotUrlMap, tt.wantUrlMap)
+				t.Errorf("TryCleanString() gotUrlMap =\n%v\n, want\n%v", gotUrlMap, tt.wantUrlMap)
 			}
 			if gotCleaned != tt.wantCleaned {
 				t.Errorf("TryCleanString() gotCleaned = %v, want %v", gotCleaned, tt.wantCleaned)
