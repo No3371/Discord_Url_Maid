@@ -85,14 +85,16 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		return
 	}
 
-	edit := api.EditMessageData{}
-	edit.Flags = new(discord.MessageFlags)
-	*edit.Flags = message.Flags
-	*edit.Flags |= discord.SuppressEmbeds
-	_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
-	if err != nil {
-		log.Printf("Failed to edit message: %v", err)
-		return
+	if cleaned > 0 {
+		edit := api.EditMessageData{}
+		edit.Flags = new(discord.MessageFlags)
+		*edit.Flags = message.Flags
+		*edit.Flags |= discord.SuppressEmbeds
+		_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
+		if err != nil {
+			log.Printf("Failed to edit message: %v", err)
+			return
+		}
 	}
 }
 
