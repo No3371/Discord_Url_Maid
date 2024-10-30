@@ -11,11 +11,12 @@ import (
 	"github.com/diamondburned/arikawa/v3/state"
 )
 
-
 type processedUrl struct {
-	Url       string
-	IsSpoiler bool
+	Raw string
+	Processed  string
+	IsSpoiler  bool
 	IsRedirect bool
+	Mask       string
 }
 
 func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
@@ -26,17 +27,20 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 
 	stats.TotalMessages++
 
-	urlMap, cleaned, containsRedirect, notUrlOnly, err := TryCleanString(message.Content, data)
+	urlMap, cleaned, redirects, masks, notUrlOnly, err := TryCleanString(message.Content, data)
 	if err != nil {
 		log.Println("Failed to clean message:", err)
 		return
 	}
 
-	if !cleaned && !containsRedirect {
+	if cleaned == 0 && redirects == 0 && masks == 0 {
 		return
 	}
 
-	replyString := PrepareReply(urlMap, containsRedirect, cleaned)
+	stats.CleanedMessages++
+
+	replyString := PrepareReply(urlMap)
+	log.Printf("---\n")
 
 	msgData := api.SendMessageData{
 		AllowedMentions: allowedMentions,
@@ -72,7 +76,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	}
 	err = nil
 
-	if cleaned && !notUrlOnly && !containsRedirect {
+	if !notUrlOnly && cleaned > 0 && redirects == 0 {
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
@@ -92,30 +96,63 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	}
 }
 
-func PrepareReply(urlMap map[string]processedUrl, containsRedirect bool, cleaned bool) string {
+func PrepareReply(urlMap []processedUrl) string {
 	sb := strings.Builder{}
 
+	cleaned := 0
 	for _, processed := range urlMap {
-		if processed.IsRedirect {
+		if processed.Processed != processed.Raw {
+			cleaned++
+		}
+	}
+
+	if cleaned == 0 && len(urlMap) == 1 {
+		for _, processed := range urlMap {
+			if processed.IsRedirect {
+				sb.WriteString("↪️ Redirect Found / 可能自動轉向未知站點")
+				return sb.String()
+			}
+
+			if processed.Mask != "" {
+				if processed.IsSpoiler {
+					sb.WriteString("||")
+				}
+				sb.WriteString(processed.Processed)
+				if processed.IsSpoiler {
+					sb.WriteString("||")
+				}
+				sb.WriteString(" <-- ")
+				sb.WriteString(processed.Mask)
+				return sb.String()
+			}
+		}
+	}
+
+	for _, processed := range urlMap {
+		if cleaned == 0 && processed.Processed == processed.Raw && processed.Mask == "" && !processed.IsRedirect {
 			continue
 		}
+
 		if processed.IsSpoiler {
 			sb.WriteString("||")
 		}
-		sb.WriteString(processed.Url)
+		sb.WriteString(processed.Processed)
 		if processed.IsSpoiler {
 			sb.WriteString("||")
+		}
+
+		if processed.Mask != "" {
+			sb.WriteString(" <-- ")
+			sb.WriteString(processed.Mask)
+		}
+		if processed.IsRedirect {
+			sb.WriteString(" ↪️ Redirect Found / 可能自動轉向未知站點")
 		}
 		sb.WriteRune('\n')
 	}
-	log.Printf("---\n")
 
-	if containsRedirect {
-		sb.WriteString("↪️ Redirect Found / 此訊息包含自動轉址（將經由該站點轉向未知站點）\n")
-	}
-
-	if cleaned {
-		stats.CleanedMessages++
+	if sb.Len() == 0 {
+		return ""
 	}
 
 	replyString := sb.String()
@@ -125,7 +162,7 @@ func PrepareReply(urlMap map[string]processedUrl, containsRedirect bool, cleaned
 	return replyString
 }
 
-func TryCleanString(str string, data *Data) (urlMap map[string]processedUrl, cleaned bool, containsRedirect bool, notUrlOnly bool, err error) {
+func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int, redirects int, masks int, notUrlOnly bool, err error) {
 
 	str, err = connectedUrlFinder.Replace(str, "$& ", -1, -1)
 	if err != nil {
@@ -169,31 +206,38 @@ func TryCleanString(str string, data *Data) (urlMap map[string]processedUrl, cle
 	var cleanedLookup map[string]string
 
 	// Loop through all matches (URLs)
-	for urlMatch != nil {
+	urlLoop: for urlMatch != nil {
 
 		matched := urlMatch.String()
-		url := matched
 
-		processed, is_redirect := CleanUrl(url, data)
+		processed, is_redirect := CleanUrl(matched, data)
 
 		if cleanedLookup == nil {
 			cleanedLookup = make(map[string]string)
 		}
 		if _, ok := cleanedLookup[processed]; !ok {
 			if is_redirect {
-				containsRedirect = true
-				log.Printf("\nFound Redirect: %s", url)
+				redirects++
+				log.Printf("\nFound Redirect: %s", matched)
 			}
-	
+
 			if processed != urlMatch.String() {
-				cleaned = true
-				log.Printf("\nCleaned: %s -> %s", url, processed)
-				cleanedLookup[processed] = url
+				cleaned++
+				log.Printf("\nCleaned: %s -> %s", matched, processed)
+				cleanedLookup[processed] = matched
 			}
 			if urlMap == nil {
-				urlMap = make(map[string]processedUrl)
+				urlMap = make([]processedUrl, 0, 3)
 			}
-			urlMap[url] = processedUrl{Url: processed, IsSpoiler: false, IsRedirect: is_redirect}
+
+			result := processedUrl{Raw: matched, Processed: processed, IsSpoiler: false, IsRedirect: is_redirect}
+			for _, url := range urlMap {
+				if url.Raw == matched {
+					result = url
+					break urlLoop
+				}
+			}
+			urlMap = append(urlMap, result)
 		}
 
 		// Move to the next match (URL)
@@ -204,8 +248,7 @@ func TryCleanString(str string, data *Data) (urlMap map[string]processedUrl, cle
 		err = nil
 	}
 
-
-	if !cleaned && !containsRedirect {
+	if cleaned == 0 && redirects == 0 {
 		return
 	}
 
@@ -220,14 +263,37 @@ func TryCleanString(str string, data *Data) (urlMap map[string]processedUrl, cle
 		spoiler := spoilerMatch.String()
 
 		for k, url := range urlMap {
-			if strings.Contains(spoiler, url.Url) {
-				urlMap[k] = processedUrl{Url: url.Url, IsSpoiler: true}
+			if strings.Contains(spoiler, url.Processed) {
+				url.IsSpoiler = true
+				urlMap[k] = url
 			}
 		}
 
 		spoilerMatch, err = spoilerFinder.FindNextMatch(spoilerMatch)
 		if err != nil {
 			log.Println("Failed to find spoilers in message:", err)
+			break
+		}
+	}
+
+	maskedMatch, err := maskedLinkFinder.FindStringMatch(messageContent)
+	if err != nil {
+		log.Println("Failed to find masked links in message:", err)
+	}
+
+	for maskedMatch != nil {
+		for i := 0; i < len(urlMap); i++ {
+			it := urlMap[i]
+			if maskedMatch.GroupByNumber(2).String() == it.Raw { // We are looking at the uncleaned mesage
+				it.Mask = maskedMatch.GroupByNumber(1).String()
+				urlMap[i] = it
+				masks++
+			}
+		}
+
+		maskedMatch, err = maskedLinkFinder.FindNextMatch(maskedMatch)
+		if err != nil {
+			log.Println("Failed to find masked links in message:", err)
 			break
 		}
 	}

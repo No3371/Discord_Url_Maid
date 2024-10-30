@@ -10,13 +10,14 @@ func TestTryCleanString(t *testing.T) {
 		str string
 	}
 	tests := []struct {
-		name                 string
-		args                 args
-		wantUrlMap           map[string]processedUrl
-		wantCleaned          bool
-		wantContainsRedirect bool
-		wantNotUrlOnly       bool
-		wantErr              bool
+		name           string
+		args           args
+		wantUrlMap     []processedUrl
+		wantCleaned    int
+		wantRedirects  int
+		wantMasks      int
+		wantNotUrlOnly bool
+		wantErr        bool
 	}{
 		{
 			name: "NotUrlOnlySpoiler",
@@ -25,16 +26,18 @@ func TestTryCleanString(t *testing.T) {
 
 https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI||  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||        ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  a || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI a  a   a ||`,
 			},
-			wantUrlMap: map[string]processedUrl{
-				"https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI": {
-					Url:       "https://www.youtube.com/live/aMM3PQ312L8",
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI",
+					Processed: "https://www.youtube.com/live/aMM3PQ312L8",
 					IsSpoiler: true,
 				},
 			},
-			wantCleaned:          true,
-			wantContainsRedirect: false,
-			wantNotUrlOnly:       true,
-			wantErr:              false,
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: true,
+			wantErr:        false,
 		},
 		{
 			name: "NotUrlOnlySpoiler",
@@ -43,16 +46,18 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 
 https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI||  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||        ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  a || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||`,
 			},
-			wantUrlMap: map[string]processedUrl{
-				"https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI": {
-					Url:       "https://www.youtube.com/live/aMM3PQ312L8",
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI",
+					Processed: "https://www.youtube.com/live/aMM3PQ312L8",
 					IsSpoiler: true,
 				},
 			},
-			wantCleaned:          true,
-			wantContainsRedirect: false,
-			wantNotUrlOnly:       true,
-			wantErr:              false,
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: true,
+			wantErr:        false,
 		},
 		{
 			name: "UrlOnlySpoiler",
@@ -61,16 +66,18 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 
 https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI||  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||        ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||   || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI`,
 			},
-			wantUrlMap: map[string]processedUrl{
-				"https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI": {
-					Url:       "https://www.youtube.com/live/aMM3PQ312L8",
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI",
+					Processed: "https://www.youtube.com/live/aMM3PQ312L8",
 					IsSpoiler: true,
 				},
 			},
-			wantCleaned:          true,
-			wantContainsRedirect: false,
-			wantNotUrlOnly:       false,
-			wantErr:              false,
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: false,
+			wantErr:        false,
 		},
 		{
 			name: "test",
@@ -83,49 +90,57 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 
 到底要多久`,
 			},
-			wantUrlMap: map[string]processedUrl{
-				"https://x.com/horo_27/status/1845408056445972628?s=19": {
-					Url:       "https://x.com/horo_27/status/1845408056445972628",
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
+					Processed: "https://x.com/horo_27/status/1845408056445972628",
 					IsSpoiler: false,
-				},
-				"https://twitcasting.tv/kurokumo_01?t=你好": {
-					Url:       "https://twitcasting.tv/kurokumo_01?t=你好",
+				}, // V
+				{
+					Raw:       "https://twitcasting.tv/kurokumo_01?t=你好",
+					Processed: "https://twitcasting.tv/kurokumo_01?t=你好",
 					IsSpoiler: false,
-				},
-				"https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770": {
-					Url:       "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+				}, // X
+				{
+					Raw:       "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+					Processed: "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
 					IsSpoiler: false,
-				},
-				"https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML": {
-					Url:       "https://www.youtube.com/live/5VL4lFPQuc4",
+				}, // X
+				{
+					Raw:       "https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML",
+					Processed: "https://www.youtube.com/live/5VL4lFPQuc4",
 					IsSpoiler: false,
-				},
-				"https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1": {
-					Url:       "https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1",
+				}, // V
+				{
+					Raw:       "https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1",
+					Processed: "https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1",
 					IsSpoiler: false,
-				},
+				}, // V
 			},
-			wantCleaned:          true,
-			wantContainsRedirect: false,
-			wantNotUrlOnly:       true,
-			wantErr:              false,
+			wantCleaned:    3,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: true,
+			wantErr:        false,
 		},
 		{
 			name: "Redirect",
 			args: args{
 				str: `https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk`,
 			},
-			wantUrlMap: map[string]processedUrl{
-				"https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk": {
-					Url:       "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
-					IsSpoiler: false,
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+					Processed:  "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+					IsSpoiler:  false,
 					IsRedirect: true,
 				},
 			},
-			wantCleaned:          false,
-			wantContainsRedirect: true,
-			wantNotUrlOnly:       false,
-			wantErr:              false,
+			wantCleaned:    0,
+			wantRedirects:  1,
+			wantMasks:      0,
+			wantNotUrlOnly: false,
+			wantErr:        false,
 		},
 	}
 	providers, err := FetchAndLoadJSON(repo)
@@ -134,7 +149,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotUrlMap, gotCleaned, gotContainsRedirect, gotNotUrlOnly, err := TryCleanString(tt.args.str, providers)
+			gotUrlMap, gotCleaned, gotRedirects, gotMasks, gotNotUrlOnly, err := TryCleanString(tt.args.str, providers)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TryCleanString() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -145,8 +160,11 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			if gotCleaned != tt.wantCleaned {
 				t.Errorf("TryCleanString() gotCleaned = %v, want %v", gotCleaned, tt.wantCleaned)
 			}
-			if gotContainsRedirect != tt.wantContainsRedirect {
-				t.Errorf("TryCleanString() gotContainsRedirect = %v, want %v", gotContainsRedirect, tt.wantContainsRedirect)
+			if gotRedirects != tt.wantRedirects {
+				t.Errorf("TryCleanString() gotContainsRedirect = %v, want %v", gotRedirects, tt.wantRedirects)
+			}
+			if gotMasks != tt.wantMasks {
+				t.Errorf("TryCleanString() gotMasks = %v, want %v", gotMasks, tt.wantMasks)
 			}
 			if gotNotUrlOnly != tt.wantNotUrlOnly {
 				t.Errorf("TryCleanString() gotNotUrlOnly = %v, want %v", gotNotUrlOnly, tt.wantNotUrlOnly)
@@ -155,76 +173,107 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 	}
 }
 
-// ! Because PrepareReply use for range, this is not guaranteed to pass (ex: it passes on my machine but not in github actions)
-// func TestPrepareReply(t *testing.T) {
-// 	type args struct {
-// 		urlMap           map[string]processedUrl
-// 		containsRedirect bool
-// 		cleaned          bool
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want string
-// 	}{
-// 		{
-// 			name: "test",
-// 			args: args{
-// 				urlMap:           map[string]processedUrl{
-// 					"https://x.com/horo_27/status/1845408056445972628?s=19": {
-// 						Url:       "https://x.com/horo_27/status/1845408056445972628",
-// 						IsSpoiler: false,
-// 					},
-// 					"https://twitcasting.tv/kurokumo_01?t=你好": {
-// 						Url:       "https://twitcasting.tv/kurokumo_01?t=你好",
-// 						IsSpoiler: false,
-// 					},
-// 					"https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770": {
-// 						Url:       "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
-// 						IsSpoiler: false,
-// 					},
-// 					"https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML": {
-// 						Url:       "https://www.youtube.com/live/5VL4lFPQuc4",
-// 						IsSpoiler: false,
-// 					},
-// 					"https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1": {
-// 						Url:       "https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1",
-// 						IsSpoiler: false,
-// 					},
-// 				},
-// 				containsRedirect: false,
-// 				cleaned:          true,
-// 			},
-// 			want: `https://x.com/horo_27/status/1845408056445972628
-// https://twitcasting.tv/kurokumo_01?t=你好
-// https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
-// https://www.youtube.com/live/5VL4lFPQuc4
-// https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
-// 		},
-// 		{
-// 			name: "redirect",
-// 			args: args{
-// 				urlMap:           map[string]processedUrl{
-// 					"https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk": {
-// 						Url:       "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
-// 						IsSpoiler: false,
-// 						IsRedirect: true,
-// 					},
-// 				},
-// 				containsRedirect: true,
-// 				cleaned:          false,
-// 			},
-// 			want: `↪️ Redirect Found / 此訊息包含自動轉址（將經由該站點轉向未知站點）`,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			if got := PrepareReply(tt.args.urlMap, tt.args.containsRedirect, tt.args.cleaned); got != tt.want {
-// 				t.Errorf("PrepareReply() = \n%v, want \n%v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
+func TestPrepareReply(t *testing.T) {
+	type args struct {
+		urlMap []processedUrl
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test",
+			args: args{
+				urlMap: []processedUrl{
+					{
+						Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
+						Processed: "https://x.com/horo_27/status/1845408056445972628",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://twitcasting.tv/kurokumo_01?t=你好",
+						Processed: "https://twitcasting.tv/kurokumo_01?t=你好",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+						Processed: "https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML",
+						Processed: "https://www.youtube.com/live/5VL4lFPQuc4",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1",
+						Processed: "https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1",
+						IsSpoiler: false,
+					},
+				},
+			},
+			want: `https://x.com/horo_27/status/1845408056445972628
+https://twitcasting.tv/kurokumo_01?t=你好
+https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
+https://www.youtube.com/live/5VL4lFPQuc4
+https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
+		},
+		{
+			name: "redirect",
+			args: args{
+				urlMap: []processedUrl{
+					{
+						Raw: "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						Processed:  "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						IsSpoiler:  false,
+						IsRedirect: true,
+					},
+				},
+			},
+			want: `↪️ Redirect Found / 可能自動轉向未知站點`,
+		},
+		{
+			name: "redirect+clean",
+			args: args{
+				urlMap: []processedUrl{
+					{
+						Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
+						Processed: "https://x.com/horo_27/status/1845408056445972628",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://twitcasting.tv/kurokumo_01?t=你好",
+						Processed: "https://twitcasting.tv/kurokumo_01?t=你好",
+						IsSpoiler: false,
+					},
+					{
+						Raw:       "https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML",
+						Processed: "https://www.youtube.com/live/5VL4lFPQuc4",
+						IsSpoiler: true,
+					},
+					{
+						Raw: "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						Processed:  "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						IsSpoiler:  false,
+						IsRedirect: true,
+					},
+				},
+			},
+			want: `https://x.com/horo_27/status/1845408056445972628
+https://twitcasting.tv/kurokumo_01?t=你好
+||https://www.youtube.com/live/5VL4lFPQuc4||
+https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk ↪️ Redirect Found / 可能自動轉向未知站點`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := PrepareReply(tt.args.urlMap); got != tt.want {
+				t.Errorf("PrepareReply() = \n%v\n, want \n%v", got, tt.want)
+			}
+		})
+	}
+}
 
 func TestCleanUrl(t *testing.T) {
 	tests := []struct {
