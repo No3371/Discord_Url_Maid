@@ -248,7 +248,29 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 		err = nil
 	}
 
-	if cleaned == 0 && redirects == 0 {
+	maskedMatch, err := maskedLinkFinder.FindStringMatch(messageContent)
+	if err != nil {
+		log.Println("Failed to find masked links in message:", err)
+	}
+
+	for maskedMatch != nil {
+		for i := 0; i < len(urlMap); i++ {
+			it := urlMap[i]
+			if maskedMatch.GroupByNumber(2).String() == it.Raw { // We are looking at the uncleaned mesage
+				it.Mask = maskedMatch.GroupByNumber(1).String()
+				urlMap[i] = it
+				masks++
+			}
+		}
+
+		maskedMatch, err = maskedLinkFinder.FindNextMatch(maskedMatch)
+		if err != nil {
+			log.Println("Failed to find masked links in message:", err)
+			break
+		}
+	}
+
+	if cleaned == 0 && redirects == 0 && masks == 0{
 		return
 	}
 
@@ -272,28 +294,6 @@ func TryCleanString(str string, data *Data) (urlMap []processedUrl, cleaned int,
 		spoilerMatch, err = spoilerFinder.FindNextMatch(spoilerMatch)
 		if err != nil {
 			log.Println("Failed to find spoilers in message:", err)
-			break
-		}
-	}
-
-	maskedMatch, err := maskedLinkFinder.FindStringMatch(messageContent)
-	if err != nil {
-		log.Println("Failed to find masked links in message:", err)
-	}
-
-	for maskedMatch != nil {
-		for i := 0; i < len(urlMap); i++ {
-			it := urlMap[i]
-			if maskedMatch.GroupByNumber(2).String() == it.Raw { // We are looking at the uncleaned mesage
-				it.Mask = maskedMatch.GroupByNumber(1).String()
-				urlMap[i] = it
-				masks++
-			}
-		}
-
-		maskedMatch, err = maskedLinkFinder.FindNextMatch(maskedMatch)
-		if err != nil {
-			log.Println("Failed to find masked links in message:", err)
 			break
 		}
 	}
