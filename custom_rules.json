@@ -13,7 +13,7 @@
             ]
         },
         "news.yahoo.com": {
-            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?news.\\yahoo\\.com\\/\\s+",
+            "urlPattern": "^https?:\\/\\/news\\.yahoo\\.com\\/\\s+",
             "rules": [
                 "guccounter",
                 "guce_referer",
