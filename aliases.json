@@ -1,0 +1,8 @@
+{
+    "aliases": {
+        "fixvx": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?fixvx.com",
+            "targetRuleName": "x"
+        }
+    }
+}

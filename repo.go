@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -60,6 +61,7 @@ type Provider struct {
 	Rules        []*regexp2.Regexp `json:"-"`
 	Exceptions   []*regexp2.Regexp `json:"-"`
 	Redirections []*regexp2.Regexp `json:"-"`
+	Aliases      []*regexp2.Regexp `json:"-"`
 }
 
 // rawProvider is used for intermediate JSON unmarshalling to keep the string values temporarily
@@ -72,15 +74,22 @@ type rawProvider struct {
 
 // Data represents the full JSON structure with all providers
 type Data struct {
-	GlobalRules Provider
-	Providers   map[string]Provider `json:"providers"`
+	GlobalRules Provider `json:"-"`
+	Providers   map[string]Provider `json:"-"`
 }
 
 const ONLINE_RULES_FILE = "clear_urls_rules.json"
 const CUSTOM_RULES_FILE = "custom_rules.json"
+const ALIAS_FILE = "aliases.json"
 
-// FetchAndLoadJSON fetches the JSON file from the given URL and unmarshals it into the given Data struct
-func FetchAndLoadJSON(url string) (*Data, error) {
+// rawAlias is used for intermediate JSON unmarshalling to keep the string values temporarily
+type rawAlias struct {
+	UrlPatternStr   string   `json:"urlPattern"`
+	TargetRuleName string   `json:"targetRuleName"`
+}
+
+// FetchAndLoadRules fetches the JSON file from the given URL and unmarshals it into the given Data struct
+func FetchAndLoadRules(url string) (*Data, error) {
 	var raw string
 	var fetch bool
 
@@ -117,6 +126,8 @@ func FetchAndLoadJSON(url string) (*Data, error) {
 		if err != nil {
 			return nil, fmt.Errorf("writeFile: %w", err)
 		}
+
+		log.Printf("Updated ClearUrls file cache.")
 	}
 
 	// Intermediate structure to hold raw strings
@@ -182,6 +193,41 @@ func FetchAndLoadJSON(url string) (*Data, error) {
 			// Add compiled provider to the map
 			data.Providers[key] = provider
 		}
+	}
+
+	f, err = os.Open(ALIAS_FILE)
+	if err != nil {
+		return &data, nil
+	} else {
+		defer f.Close()
+		rawBytes, err := io.ReadAll(f)
+		if err != nil {
+			return nil, fmt.Errorf("readAll: %w", err)
+		}
+		raw = string(rawBytes)
+	}
+	
+	var rawAliasFile struct {
+		Items map[string]rawAlias `json:"aliases"`
+	}
+	err = json.NewDecoder(strings.NewReader(raw)).Decode(&rawAliasFile)
+	if err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	for key, rawAlias := range rawAliasFile.Items {
+		target, targetExists := data.Providers[rawAlias.TargetRuleName]
+
+		if !targetExists {
+			continue
+		}
+
+		urlPattern, err := regexp2.Compile(rawAlias.UrlPatternStr, regexp2.None)
+		if err != nil {
+			return &data, fmt.Errorf("failed to compile UrlPattern for provider %s: %v", key, err)
+		}
+		target.Aliases = append(target.Aliases, urlPattern)
+		data.Providers[key] = target
 	}
 
 	return &data, nil

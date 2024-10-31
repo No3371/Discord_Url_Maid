@@ -40,6 +40,24 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 			wantErr:        false,
 		},
 		{
+			name: "Alias",
+			args: args{
+				str: `https://fixvx.com/belmond_b_2434/status/1851970896631861576?t=UD6n89jD4GoHSCFNkPsHbA&s=19`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://fixvx.com/belmond_b_2434/status/1851970896631861576?t=UD6n89jD4GoHSCFNkPsHbA&s=19",
+					Processed: "https://fixvx.com/belmond_b_2434/status/1851970896631861576",
+					IsSpoiler: false,
+				},
+			},
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: false,
+			wantErr:        false,
+		},
+		{
 			name: "NotUrlOnlySpoiler",
 			args: args{
 				str: `https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||
@@ -95,7 +113,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 					Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
 					Processed: "https://x.com/horo_27/status/1845408056445972628",
 					IsSpoiler: false,
-					Mask: "到底要多久",
+					Mask:      "到底要多久",
 				}, // V
 				{
 					Raw:       "https://twitcasting.tv/kurokumo_01?t=你好",
@@ -154,7 +172,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 					Processed:  "https://123.com",
 					IsSpoiler:  false,
 					IsRedirect: false,
-					Mask: " 123 ",
+					Mask:       " 123 ",
 				},
 			},
 			wantCleaned:    0,
@@ -164,7 +182,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			wantErr:        false,
 		},
 	}
-	providers, err := FetchAndLoadJSON(repo)
+	providers, err := FetchAndLoadRules(repo)
 	if err != nil {
 		t.Fatalf("FetchAndLoadJSON() error = %v", err)
 	}
@@ -245,7 +263,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
 			args: args{
 				urlMap: []processedUrl{
 					{
-						Raw: "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						Raw:        "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
 						Processed:  "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
 						IsSpoiler:  false,
 						IsRedirect: true,
@@ -274,7 +292,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
 						IsSpoiler: true,
 					},
 					{
-						Raw: "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
+						Raw:        "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
 						Processed:  "https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk",
 						IsSpoiler:  false,
 						IsRedirect: true,
@@ -312,7 +330,7 @@ func TestCleanUrl(t *testing.T) {
 		{"test", "https://cathaybk.com.tw/cathaybk/personal/product/credit-card/cards/eva/?CUB_SRC=GOOGLE&CUB_CHL1=AD_WORD&CUB_CHL2=01&MA_TK=DB590&CUB_DT=20240101&Cub_ProjectCode=DBB4400001&gad_source=1&gclid=Cj0KCQjw9Km3BhDjARIsAGUb4nygrkAZpfoCJo3YVMkZsSfpMtF8I2aoAy22EAOp8REOOeSlSd5r5d0aAk6zEALw_wcB", "https://cathaybk.com.tw/cathaybk/personal/product/credit-card/cards/eva/?CUB_SRC=GOOGLE&CUB_CHL1=AD_WORD&CUB_CHL2=01&MA_TK=DB590&CUB_DT=20240101&Cub_ProjectCode=DBB4400001"},
 		{"test", "https://m.momoshop.com.tw/goods.momo?i_code=10489628&osm=Ad07&utm_source=googleshop&utm_medium=googleshop-pmax-all-mb-feed&utm_content=bn&gclid=Cj0KCQjwwae1BhC_ARIsAK4Jfrw5xTuyBtdUOafMEZCD3bV0d6H77it_bp5Zi0UrzXjK69ztk3Z_hXgaAiFVEALw_wcB", "https://m.momoshop.com.tw/goods.momo?i_code=10489628"},
 	}
-	providers, err := FetchAndLoadJSON(repo)
+	providers, err := FetchAndLoadRules(repo)
 	if err != nil {
 		t.Fatalf("FetchAndLoadJSON() error = %v", err)
 	}

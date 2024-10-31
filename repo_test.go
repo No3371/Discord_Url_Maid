@@ -17,7 +17,7 @@ func TestFetchAndLoadJSON(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d, err := FetchAndLoadJSON(tt.args.url)
+			d, err := FetchAndLoadRules(tt.args.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("FetchAndLoadJSON() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -251,7 +251,7 @@ func TestDespoil(t *testing.T) {
 
 https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI||  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||        ||https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  a || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI  || https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  ||  https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI a  a   a ||`,
 			},
-			want:    `https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI   
+			want: `https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI   
 
 https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI   https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI     https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUIhttps://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI     https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI           https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    a   https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI    https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI       https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI a  a   a ||`,
 			wantErr: false,

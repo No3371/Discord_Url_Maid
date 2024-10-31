@@ -333,7 +333,19 @@ func CleanUrl(url string, data *Data) (processed string, is_redirect bool) {
 func applyRules(provider Provider, url string, is_redirect bool) (string, bool) {
 
 	if match, _ := provider.UrlPattern.MatchString(url); !match {
-		return url, is_redirect
+
+		i := len(provider.Aliases)
+		if provider.Aliases != nil {
+			for _, alias := range provider.Aliases {
+				if aliasMatch, _ := alias.MatchString(url); !aliasMatch {
+					i -= 1
+				}
+			}
+		}
+		if i == 0 {
+			return url, is_redirect
+		}
+
 	}
 
 	for _, rdr := range provider.Redirections {
