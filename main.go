@@ -18,11 +18,10 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 var stats *Stats = &Stats{}
 var allowedMentions *api.AllowedMentions
 
-func init () {
+func init() {
 	allowedMentions = &api.AllowedMentions{
 		Parse:       []api.AllowedMentionType{},
 		Roles:       []discord.RoleID{},
@@ -38,11 +37,11 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-    loadGuildLocaleMap()
+	loadGuildLocaleMap()
 
 	ctx := contextWithSigterm(context.Background())
 
-	b, err := FetchAndLoadJSON(repo)
+	b, err := FetchAndLoadRules(repo)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -184,10 +183,10 @@ func locale(lang string, id string) string {
 }
 
 func getGuildLocale(guildID discord.GuildID) string {
-    if v, ok := guildLocaleMap[int64(guildID)]; ok {
-        return v
-    }
-    return ""
+	if v, ok := guildLocaleMap[int64(guildID)]; ok {
+		return v
+	}
+	return ""
 }
 
 var guildLocaleMap map[int64]string
@@ -195,26 +194,26 @@ var guildLocaleMap map[int64]string
 const GUILD_LOCALE_FILE = "guilds_locale.json"
 
 func loadGuildLocaleMap() {
-    b, err := os.ReadFile(GUILD_LOCALE_FILE)
+	b, err := os.ReadFile(GUILD_LOCALE_FILE)
 	if err != nil {
-        return
-    }
+		return
+	}
 
-    temp := make(map[string]string)
-    err = json.Unmarshal(b, temp)
-    if err != nil {
-        fmt.Errorf("failed to unmarshal guild locale map: %w", err)
-        return
-    }
+	temp := make(map[string]string)
+	err = json.Unmarshal(b, temp)
+	if err != nil {
+		fmt.Errorf("failed to unmarshal guild locale map: %w", err)
+		return
+	}
 
-    for k, v := range temp {
-        id, err := strconv.ParseInt(k, 10, 64)
-        if err != nil {
-            fmt.Errorf("skipping %s because failed to unmarshal parse guild id: %w", k, err)
-            continue
-        }
-        guildLocaleMap[id] = v
-    }
+	for k, v := range temp {
+		id, err := strconv.ParseInt(k, 10, 64)
+		if err != nil {
+			fmt.Errorf("skipping %s because failed to unmarshal parse guild id: %w", k, err)
+			continue
+		}
+		guildLocaleMap[id] = v
+	}
 
 	fmt.Printf("Loaded Guild Locale Map: %+v", guildLocaleMap)
 }
