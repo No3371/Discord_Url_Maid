@@ -123,12 +123,12 @@ func PrepareReply(urlMap []processedUrl) string {
 				if processed.IsSpoiler {
 					sb.WriteString("||")
 				}
+				sb.WriteString(processed.Mask)
+				sb.WriteString(" ↔️ ")
 				sb.WriteString(processed.Processed)
 				if processed.IsSpoiler {
 					sb.WriteString("||")
 				}
-				sb.WriteString(" <-- ")
-				sb.WriteString(processed.Mask)
 				return sb.String()
 			}
 		}
@@ -142,14 +142,14 @@ func PrepareReply(urlMap []processedUrl) string {
 		if processed.IsSpoiler {
 			sb.WriteString("||")
 		}
+
+		if processed.Mask != "" {
+			sb.WriteString(processed.Mask)
+			sb.WriteString(" ↔️ ")
+		}
 		sb.WriteString(processed.Processed)
 		if processed.IsSpoiler {
 			sb.WriteString("||")
-		}
-
-		if processed.Mask != "" {
-			sb.WriteString(" <-- ")
-			sb.WriteString(processed.Mask)
 		}
 		if processed.IsRedirect {
 			sb.WriteString(" ↪️ Redirect Found / 可能自動轉向未知站點")
