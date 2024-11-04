@@ -16,6 +16,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
+	"github.com/diamondburned/arikawa/v3/utils/json/option"
 	"github.com/joho/godotenv"
 )
 
@@ -95,13 +96,33 @@ func main() {
 			for _, toDel := range data.Resolved.Messages {
 				if (toDel.ReferencedMessage == nil && strings.HasPrefix(toDel.Content, m.Member.User.Mention())) ||
 					(toDel.ReferencedMessage != nil && toDel.ReferencedMessage.Author.ID == m.Member.User.ID) {
-					if s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author") != nil {
-						s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+					err := s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+					if err != nil {
+						err = s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+					}
+					if err == nil {
+						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
+							Type: api.MessageInteractionWithSource,
+							Data: &api.InteractionResponseData{
+								Content: option.NewNullableString("OK ✨"),
+								Flags:   discord.EphemeralMessage,
+							},
+						})
 					}
 				} else {
-					tryDeleteByOthers(s, toDel.ChannelID, toDel.ID)
+					if tryDeleteByOthers(s, toDel.ChannelID, toDel.ID) {
+						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
+							Type: api.MessageInteractionWithSource,
+							Data: &api.InteractionResponseData{
+								Content: option.NewNullableString("OK ✨"),
+								Flags:   discord.EphemeralMessage,
+							},
+						})
+					}
+					return
 				}
 			}
+
 
 		}
 	})
@@ -115,20 +136,22 @@ func main() {
 	defer s.Close()
 }
 
-func tryDeleteByOthers(s *state.State, cId discord.ChannelID, mId discord.MessageID) {
+func tryDeleteByOthers(s *state.State, cId discord.ChannelID, mId discord.MessageID) bool {
 
 	lastRequestedTime, requested := lastDeleteRequest[mId]
 	if !requested {
 		lastDeleteRequest[mId] = time.Now()
-		return
+		return false
 	}
 	if time.Since(lastRequestedTime) < time.Second*3 {
 		if s.DeleteMessage(cId, mId, "Requested by the original author") != nil {
 			s.DeleteMessage(cId, mId, "Requested by the original author")
 		}
 		delete(lastDeleteRequest, mId)
+		return true
 	} else {
 		lastDeleteRequest[mId] = time.Now()
+		return false
 	}
 
 }
