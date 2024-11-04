@@ -59,12 +59,15 @@ func main() {
 		},
 	)
 
-	s.BulkOverwriteCommands(s.Ready().Application.ID, []api.CreateCommandData{
-		{
-			Name: "❌",
-			Type: discord.MessageCommand,
-		},
+	s.AddHandler(func(m *gateway.ReadyEvent) {
+		s.BulkOverwriteCommands(s.Ready().Application.ID, []api.CreateCommandData{
+			{
+				Name: "❌",
+				Type: discord.MessageCommand,
+			},
+		})
 	})
+
 
 	s.AddHandler(func(m *gateway.InteractionCreateEvent) {
 		data := m.Data.(*discord.CommandInteraction)
