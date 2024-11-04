@@ -3,6 +3,18 @@
         "fixvx": {
             "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?fixvx.com",
             "targetRuleName": "x"
+        },
+        "ddinstagram": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?ddinstagram\\.com",
+            "targetRuleName": "instagram"
+        },
+        "vxtwitter": {
+            "urlPattern": "^https?:\\/\\/vxtwitter\\.com",
+            "targetRuleName": "x"
+        },
+        "fxtwitter": {
+            "urlPattern": "^https?:\\/\\/fxtwitter\\.com",
+            "targetRuleName": "x"
         }
     }
 }
