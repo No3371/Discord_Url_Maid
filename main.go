@@ -56,7 +56,7 @@ func main() {
 	s.AddHandler(
 		// MessageCreate is called every time a message is sent in a server the bot has access to
 		func(m *gateway.MessageCreateEvent) {
-			defer func () {
+			defer func() {
 				err := recover()
 				if err != nil {
 					log.Printf("Error when handling message: %v", err)
@@ -76,7 +76,7 @@ func main() {
 	})
 
 	s.AddHandler(func(m *gateway.InteractionCreateEvent) {
-		defer func () {
+		defer func() {
 			err := recover()
 			if err != nil {
 				log.Printf("Error when handling deletion request: %v", err)
@@ -118,11 +118,18 @@ func main() {
 								Flags:   discord.EphemeralMessage,
 							},
 						})
+					} else {
+						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
+							Type: api.MessageInteractionWithSource,
+							Data: &api.InteractionResponseData{
+								Content: option.NewNullableString("You are not the author, so you need to find someone and press this together to delete this!\n因為你不是作者，需要找人同時按這個才能刪除！"),
+								Flags:   discord.EphemeralMessage,
+							},
+						})
 					}
 					return
 				}
 			}
-
 
 		}
 	})
@@ -137,13 +144,24 @@ func main() {
 }
 
 func tryDeleteByOthers(s *state.State, cId discord.ChannelID, mId discord.MessageID) bool {
-
+	defer func() { // Clean up
+		maxIt := 10
+		for k, t := range lastDeleteRequest {
+			if time.Since(t) > time.Second*60 {
+				delete(lastDeleteRequest, k)
+			}
+			maxIt--
+			if maxIt <= 0 {
+				break
+			}
+		}
+	}()
 	lastRequestedTime, requested := lastDeleteRequest[mId]
 	if !requested {
 		lastDeleteRequest[mId] = time.Now()
 		return false
 	}
-	if time.Since(lastRequestedTime) < time.Second*3 {
+	if time.Since(lastRequestedTime) < time.Second*2 {
 		if s.DeleteMessage(cId, mId, "Requested by the original author") != nil {
 			s.DeleteMessage(cId, mId, "Requested by the original author")
 		}
