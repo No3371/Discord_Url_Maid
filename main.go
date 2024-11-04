@@ -94,6 +94,14 @@ func main() {
 			}
 
 			for _, toDel := range data.Resolved.Messages {
+				me, err := s.Me()
+				if err != nil {
+					log.Printf("Failed to get me: %v", err)
+					return
+				}
+				if toDel.Author.ID != me.ID {
+					return
+				}
 				if (toDel.ReferencedMessage == nil && strings.HasPrefix(toDel.Content, m.Member.User.Mention())) ||
 					(toDel.ReferencedMessage != nil && toDel.ReferencedMessage.Author.ID == m.Member.User.ID) {
 					err := s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
