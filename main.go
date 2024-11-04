@@ -81,15 +81,15 @@ func main() {
 				return
 			}
 
-			toDel := data.Resolved.Messages[0]
-
-			if (toDel.ReferencedMessage == nil && strings.HasPrefix(toDel.Content, m.Member.User.Mention())) ||
-			   (toDel.ReferencedMessage != nil && toDel.ReferencedMessage.Author.ID == m.Member.User.ID) {
-				if s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author") != nil {
-					s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+			for _, toDel := range data.Resolved.Messages {
+				if (toDel.ReferencedMessage == nil && strings.HasPrefix(toDel.Content, m.Member.User.Mention())) ||
+					(toDel.ReferencedMessage != nil && toDel.ReferencedMessage.Author.ID == m.Member.User.ID) {
+					if s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author") != nil {
+						s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+					}
+				} else {
+					tryDeleteByOthers(s, toDel.ChannelID, toDel.ID)
 				}
-			} else {
-				tryDeleteByOthers(s, toDel.ChannelID, toDel.ID)
 			}
 
 		}
