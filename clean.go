@@ -21,7 +21,7 @@ type processedUrl struct {
 
 func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
 	// Ignore bot messages
-	if message.Author.Bot {
+	if message.Author.Bot || message == nil {
 		return
 	}
 
@@ -80,7 +80,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	}
 	err = nil
 
-	if !notUrlOnly && cleaned > 0 && redirects == 0 {
+	if !notUrlOnly && cleaned > 0 && redirects == 0 && message.ReferencedMessage == nil {
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
