@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -20,6 +21,7 @@ import (
 
 var stats *Stats = &Stats{}
 var allowedMentions *api.AllowedMentions
+var lastDeleteRequest map[discord.MessageID]time.Time
 
 func init() {
 	allowedMentions = &api.AllowedMentions{
@@ -29,6 +31,7 @@ func init() {
 		RepliedUser: new(bool),
 	}
 	*allowedMentions.RepliedUser = false
+	lastDeleteRequest = make(map[discord.MessageID]time.Time)
 }
 
 func main() {
@@ -56,6 +59,39 @@ func main() {
 		},
 	)
 
+	s.BulkOverwriteCommands(s.Ready().Application.ID, []api.CreateCommandData{
+		{
+			Name: "❌",
+			Type: discord.MessageCommand,
+		},
+	})
+
+	s.AddHandler(func(m *gateway.InteractionCreateEvent) {
+		data := m.Data.(*discord.CommandInteraction)
+		if data == nil {
+			return
+		}
+
+		switch data.Name {
+		case "❌":
+			if len(data.Resolved.Messages) == 0 {
+				return
+			}
+
+			toDel := data.Resolved.Messages[0]
+
+			if (toDel.ReferencedMessage == nil && strings.HasPrefix(toDel.Content, m.Member.User.Mention())) ||
+			   (toDel.ReferencedMessage != nil && toDel.ReferencedMessage.Author.ID == m.Member.User.ID) {
+				if s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author") != nil {
+					s.DeleteMessage(toDel.ChannelID, toDel.ID, "Requested by the original author")
+				}
+			} else {
+				tryDeleteByOthers(s, toDel.ChannelID, toDel.ID)
+			}
+
+		}
+	})
+
 	// Wait for Ctrl+C or another termination signal to stop the bot
 	log.Println("Bot is running...")
 	err = s.Connect(ctx)
@@ -63,9 +99,25 @@ func main() {
 		log.Printf("Failed to open session: %v", err)
 	}
 	defer s.Close()
-
 }
 
+func tryDeleteByOthers (s *state.State,cId discord.ChannelID, mId discord.MessageID) {
+
+	lastRequestedTime, requested := lastDeleteRequest[mId]
+	if !requested {
+		lastDeleteRequest[mId] = time.Now()
+		return
+	}
+	if time.Since(lastRequestedTime) < time.Second*3 {
+		if s.DeleteMessage(cId, mId, "Requested by the original author") != nil {
+			s.DeleteMessage(cId, mId, "Requested by the original author")
+		}
+		delete(lastDeleteRequest, mId)
+	} else {
+		lastDeleteRequest[mId] = time.Now()
+	}
+
+}
 // https://gist.github.com/matejb/87064825093c42c1e76e7175665d9a9b
 func contextWithSigterm(ctx context.Context) context.Context {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
