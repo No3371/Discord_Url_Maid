@@ -55,6 +55,12 @@ func main() {
 	s.AddHandler(
 		// MessageCreate is called every time a message is sent in a server the bot has access to
 		func(m *gateway.MessageCreateEvent) {
+			defer func () {
+				err := recover()
+				if err != nil {
+					log.Printf("Error when handling message: %v", err)
+				}
+			}()
 			TryCleanMessage(m, b, s)
 		},
 	)
@@ -68,8 +74,13 @@ func main() {
 		})
 	})
 
-
 	s.AddHandler(func(m *gateway.InteractionCreateEvent) {
+		defer func () {
+			err := recover()
+			if err != nil {
+				log.Printf("Error when handling deletion request: %v", err)
+			}
+		}()
 		data := m.Data.(*discord.CommandInteraction)
 		if data == nil {
 			return
@@ -104,7 +115,7 @@ func main() {
 	defer s.Close()
 }
 
-func tryDeleteByOthers (s *state.State,cId discord.ChannelID, mId discord.MessageID) {
+func tryDeleteByOthers(s *state.State, cId discord.ChannelID, mId discord.MessageID) {
 
 	lastRequestedTime, requested := lastDeleteRequest[mId]
 	if !requested {
@@ -121,6 +132,7 @@ func tryDeleteByOthers (s *state.State,cId discord.ChannelID, mId discord.Messag
 	}
 
 }
+
 // https://gist.github.com/matejb/87064825093c42c1e76e7175665d9a9b
 func contextWithSigterm(ctx context.Context) context.Context {
 	ctxWithCancel, cancel := context.WithCancel(ctx)
