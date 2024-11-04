@@ -63,15 +63,15 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		msgData.Flags = discord.SuppressNotifications | discord.SuppressEmbeds
 	}
 
-	if notUrlOnly {
-		msgData.Content = replyString
+	deleting := !notUrlOnly && cleaned > 0 && redirects == 0 && message.ReferencedMessage == nil
+	if !deleting {
 		msgData.Reference = nil
+	}
+
+	if len(urlMap) > 1 {
+		msgData.Content = fmt.Sprintf("%s:\n%s", message.Author.Mention(), replyString)
 	} else {
-		if len(urlMap) > 1 {
-			msgData.Content = fmt.Sprintf("%s:\n%s", message.Author.Mention(), replyString)
-		} else {
-			msgData.Content = fmt.Sprintf("%s: %s", message.Author.Mention(), replyString)
-		}
+		msgData.Content = fmt.Sprintf("%s: %s", message.Author.Mention(), replyString)
 	}
 
 	_, err = s.SendMessageComplex(message.ChannelID, msgData)
@@ -80,7 +80,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	}
 	err = nil
 
-	if !notUrlOnly && cleaned > 0 && redirects == 0 && message.ReferencedMessage == nil {
+	if deleting {
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
