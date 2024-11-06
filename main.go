@@ -130,7 +130,7 @@ func main() {
 						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
 							Type: api.MessageInteractionWithSource,
 							Data: &api.InteractionResponseData{
-								Content: option.NewNullableString("You are not the author, so you need to find someone and press this together to delete this!\n因為你不是作者，需要找人同時按這個才能刪除！"),
+								Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
 								Flags:   discord.EphemeralMessage,
 							},
 						})

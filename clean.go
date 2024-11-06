@@ -24,7 +24,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	if message.Author.Bot || message == nil {
 		return
 	}
-
+	
 	stats.TotalMessages++
 
 	urlMap, cleaned, redirects, masks, notUrlOnly, err := TryCleanString(message.Content, data)
