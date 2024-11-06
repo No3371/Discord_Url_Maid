@@ -32,6 +32,12 @@
             "rules": [
                 "osm"
             ]
+        },
+        "threads": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?threads\\.net",
+            "rules": [
+                "xmt"
+            ]
         }
     }
 }

@@ -4,6 +4,10 @@
             "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?fixvx.com",
             "targetRuleName": "x"
         },
+        "fixupx": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?fixupx.com",
+            "targetRuleName": "x"
+        },
         "ddinstagram": {
             "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?ddinstagram\\.com",
             "targetRuleName": "instagram"
@@ -15,6 +19,10 @@
         "fxtwitter": {
             "urlPattern": "^https?:\\/\\/fxtwitter\\.com",
             "targetRuleName": "x"
+        },
+        "fixthreads": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?fixthreads\\.net",
+            "targetRuleName": "threads"
         }
     }
 }
