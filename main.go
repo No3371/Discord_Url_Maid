@@ -139,7 +139,7 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 	defer func() { // Clean up
 		maxIt := 10
 		for k, t := range lastDeleteRequest {
-			if time.Since(t) > time.Second*5 {
+			if time.Since(t) > time.Second*6 {
 				delete(lastDeleteRequest, k)
 			}
 			maxIt--
@@ -149,8 +149,8 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		}
 	}()
 	waiting := false
-	lastRequestedTime, requested := lastDeleteRequest[mId]
-	if !requested {
+	lastRequestedTime, foundRequest := lastDeleteRequest[mId]
+	if !foundRequest {
 		lastDeleteRequest[mId] = time.Now()
 
 		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
@@ -162,11 +162,11 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		})
 
 		waiting = true
-		<-time.After(time.Second * 2)
+		<-time.After(time.Second * 3 / 2)
 	}
 		
-	lastRequestedTime, requested = lastDeleteRequest[mId]
-	if !requested { // Already deleted
+	lastRequestedTime, foundRequest = lastDeleteRequest[mId]
+	if !foundRequest { // Already deleted
 		if waiting {
 			s.EditInteractionResponse(ev.AppID, ev.Token, api.EditInteractionResponseData{
 				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
@@ -189,6 +189,13 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 			}
 		}
 		delete(lastDeleteRequest, mId)
+		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+			Type: api.MessageInteractionWithSource,
+			Data: &api.InteractionResponseData{
+				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
+				Flags:   discord.EphemeralMessage,
+			},
+		})
 		return
 	}
 
