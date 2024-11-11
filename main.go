@@ -169,7 +169,7 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 	if !foundRequest { // Already deleted
 		if waiting {
 			s.EditInteractionResponse(ev.AppID, ev.Token, api.EditInteractionResponseData{
-				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
+				Content: option.NewNullableString("💥COMBO💥合體技發動💥\n✨٩(ˊωˋ*)و✨"),
 			})
 		}
 		return
@@ -192,7 +192,7 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
 			Type: api.MessageInteractionWithSource,
 			Data: &api.InteractionResponseData{
-				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
+				Content: option.NewNullableString("💥COMBO💥合體技發動💥\n✨٩(ˊωˋ*)و✨"),
 				Flags:   discord.EphemeralMessage,
 			},
 		})
