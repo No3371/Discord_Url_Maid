@@ -112,29 +112,13 @@ func main() {
 						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
 							Type: api.MessageInteractionWithSource,
 							Data: &api.InteractionResponseData{
-								Content: option.NewNullableString("OK ✨"),
+								Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
 								Flags:   discord.EphemeralMessage,
 							},
 						})
 					}
 				} else {
-					if tryDeleteByOthers(s, toDel.ChannelID, toDel.ID) {
-						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
-							Type: api.MessageInteractionWithSource,
-							Data: &api.InteractionResponseData{
-								Content: option.NewNullableString("OK ✨"),
-								Flags:   discord.EphemeralMessage,
-							},
-						})
-					} else {
-						s.RespondInteraction(m.ID, m.Token, api.InteractionResponse{
-							Type: api.MessageInteractionWithSource,
-							Data: &api.InteractionResponseData{
-								Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
-								Flags:   discord.EphemeralMessage,
-							},
-						})
-					}
+					tryDeleteByOthersDeferred(s, m, toDel.ChannelID, toDel.ID)
 					return
 				}
 			}
@@ -149,6 +133,86 @@ func main() {
 		log.Printf("Failed to open session: %v", err)
 	}
 	defer s.Close()
+}
+
+func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEvent, cId discord.ChannelID, mId discord.MessageID) {
+	defer func() { // Clean up
+		maxIt := 10
+		for k, t := range lastDeleteRequest {
+			if time.Since(t) > time.Second*5 {
+				delete(lastDeleteRequest, k)
+			}
+			maxIt--
+			if maxIt <= 0 {
+				break
+			}
+		}
+	}()
+	lastRequestedTime, requested := lastDeleteRequest[mId]
+	if !requested {
+		lastDeleteRequest[mId] = time.Now()
+
+		err := s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+			Type: api.DeferredMessageInteractionWithSource,
+			Data: &api.InteractionResponseData{
+				Content: option.NewNullableString("Waiting for 2p...\\等待 2p...\nYou are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
+				Flags:   discord.EphemeralMessage,
+			},
+		})
+
+		if err != nil {
+			s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+				Type: api.MessageInteractionWithSource,
+				Data: &api.InteractionResponseData{
+					Content: option.NewNullableString("(*´･д･)? It failed... \\ 不知道為什麼失敗了..."),
+					Flags:   discord.EphemeralMessage,
+				},
+			})
+		}
+
+		<-time.After(time.Second * 2)
+	}
+		
+	lastRequestedTime, requested = lastDeleteRequest[mId]
+	if !requested { // Already deleted
+		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+			Type: api.DeferredMessageUpdate,
+			Data: &api.InteractionResponseData{
+				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
+				Flags:   discord.EphemeralMessage,
+			},
+		})
+		return
+	}
+
+	if time.Since(lastRequestedTime) < time.Second*2 {
+		if s.DeleteMessage(cId, mId, "Requested by others") != nil {
+			if s.DeleteMessage(cId, mId, "Requested by others") != nil {
+				s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+					Type: api.MessageInteractionWithSource,
+					Data: &api.InteractionResponseData{
+						Content: option.NewNullableString("(*´･д･)? It failed... \\ 不知道為什麼失敗了..."),
+						Flags:   discord.EphemeralMessage,
+					},
+				})
+				return
+			}
+		}
+		delete(lastDeleteRequest, mId)
+		return
+	}
+
+	err := s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+		Type: api.DeferredMessageUpdate,
+		Data: &api.InteractionResponseData{
+			Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
+			Flags:   discord.EphemeralMessage,
+		},
+	})
+
+	if err != nil {
+		log.Printf("Error from tryDeleteByOthersDeferred: %v", err)
+	}
 }
 
 func tryDeleteByOthers(s *state.State, cId discord.ChannelID, mId discord.MessageID) bool {
