@@ -148,11 +148,12 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 			}
 		}
 	}()
+	waiting := false
 	lastRequestedTime, requested := lastDeleteRequest[mId]
 	if !requested {
 		lastDeleteRequest[mId] = time.Now()
 
-		err := s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
 			Type: api.DeferredMessageInteractionWithSource,
 			Data: &api.InteractionResponseData{
 				Content: option.NewNullableString("Waiting for 2p...\\等待 2p...\nYou are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
@@ -160,32 +161,21 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 			},
 		})
 
-		if err != nil {
-			s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
-				Type: api.MessageInteractionWithSource,
-				Data: &api.InteractionResponseData{
-					Content: option.NewNullableString("(*´･д･)? It failed... \\ 不知道為什麼失敗了..."),
-					Flags:   discord.EphemeralMessage,
-				},
-			})
-		}
-
+		waiting = true
 		<-time.After(time.Second * 2)
 	}
 		
 	lastRequestedTime, requested = lastDeleteRequest[mId]
 	if !requested { // Already deleted
-		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
-			Type: api.DeferredMessageUpdate,
-			Data: &api.InteractionResponseData{
+		if waiting {
+			s.EditInteractionResponse(ev.AppID, ev.Token, api.EditInteractionResponseData{
 				Content: option.NewNullableString("OK ✨٩(ˊωˋ*)و✨"),
-				Flags:   discord.EphemeralMessage,
-			},
-		})
+			})
+		}
 		return
 	}
 
-	if time.Since(lastRequestedTime) < time.Second*2 {
+	if !waiting && time.Since(lastRequestedTime) < time.Second*2 {
 		if s.DeleteMessage(cId, mId, "Requested by others") != nil {
 			if s.DeleteMessage(cId, mId, "Requested by others") != nil {
 				s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
@@ -202,12 +192,9 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		return
 	}
 
-	err := s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
-		Type: api.DeferredMessageUpdate,
-		Data: &api.InteractionResponseData{
-			Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
-			Flags:   discord.EphemeralMessage,
-		},
+	
+	_, err := s.EditInteractionResponse(ev.AppID, ev.Token, api.EditInteractionResponseData{
+		Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
 	})
 
 	if err != nil {
