@@ -16,8 +16,8 @@
             "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?yahoo\\.com\\/",
             "rules": [
                 "guccounter",
-                "guce_referer",
-                "guce_referer_sig"
+                "guce_referrer",
+                "guce_referrer_sig"
             ]
         },
         "ettoday": {
