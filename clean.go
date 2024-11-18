@@ -63,9 +63,27 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		msgData.Flags = discord.SuppressNotifications | discord.SuppressEmbeds
 	}
 
-	deleting := !notUrlOnly && cleaned > 0 && redirects == 0 && message.ReferencedMessage == nil
+	deleting := !notUrlOnly && cleaned > 0 && redirects == 0
 	if !deleting {
 		msgData.Reference = nil
+	}
+
+	// If it's a reply
+	//   If mentioning
+	//     leave it as is
+	//   Not mentioning
+	//     delete, reply to original
+	if deleting && message.ReferencedMessage != nil && message.Type == discord.InlinedReplyMessage {
+		mentioning := len(message.Mentions) > 0
+		if !mentioning {
+			msgData.Reference = &discord.MessageReference{
+				MessageID: message.ReferencedMessage.ID,
+				ChannelID: message.ReferencedMessage.ChannelID,
+				GuildID:   message.ReferencedMessage.GuildID,
+			}
+		} else {
+			deleting = false
+		}
 	}
 
 	if len(urlMap) > 1 {
