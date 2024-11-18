@@ -181,6 +181,25 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			wantNotUrlOnly: true,
 			wantErr:        false,
 		},
+		{
+			name: "Unicode",
+			args: args{
+				str: `https://tw.news.yahoo.com/美國廠員工控-反美-歧視-台積電回應了-041403730.html?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuYmluZy5jb20v&guce_referrer_sig=AQAAAAugbfaLHVLtku5rFhE3d9LwwXyRPJ1XAP-nGFY3wPlnqCrABlVBf_ecDRCtFi6SuutNMd011EYwAh6wYohJ9cFl2L6o7M1fHP2M-3U5e0EqoJGoIFWEQ5L2CH63Lk6zlPvtK-NKH1uqiY1SyQ4zdmPc4aag7Wkwb-z_onj1Bc9N`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://tw.news.yahoo.com/美國廠員工控-反美-歧視-台積電回應了-041403730.html?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuYmluZy5jb20v&guce_referrer_sig=AQAAAAugbfaLHVLtku5rFhE3d9LwwXyRPJ1XAP-nGFY3wPlnqCrABlVBf_ecDRCtFi6SuutNMd011EYwAh6wYohJ9cFl2L6o7M1fHP2M-3U5e0EqoJGoIFWEQ5L2CH63Lk6zlPvtK-NKH1uqiY1SyQ4zdmPc4aag7Wkwb-z_onj1Bc9N",
+					Processed:  "https://tw.news.yahoo.com/美國廠員工控-反美-歧視-台積電回應了-041403730.html",
+					IsSpoiler:  false,
+					IsRedirect: false,
+				},
+			},
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: false,
+			wantErr:        false,
+		},
 	}
 	providers, err := FetchAndLoadRules(repo)
 	if err != nil {
