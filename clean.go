@@ -44,11 +44,11 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 
 	msgData := api.SendMessageData{
 		AllowedMentions: mentionNone,
-		// Reference: &discord.MessageReference{
-		// 	MessageID: message.ID,
-		// 	ChannelID: message.ChannelID,
-		// 	GuildID:   message.GuildID,
-		// },
+		Reference: &discord.MessageReference{
+			MessageID: message.ID,
+			ChannelID: message.ChannelID,
+			GuildID:   message.GuildID,
+		},
 		Flags: discord.SuppressNotifications,
 		// Components: discord.Components (
 		// 	&discord.ButtonComponent{
@@ -83,6 +83,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 			}
 		} else {
 			deleting = false
+			msgData.Reference = nil
 		}
 	}
 
