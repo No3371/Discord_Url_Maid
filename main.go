@@ -21,17 +21,17 @@ import (
 )
 
 var stats *Stats = &Stats{}
-var allowedMentions *api.AllowedMentions
+var mentionNone *api.AllowedMentions
 var lastDeleteRequest map[discord.MessageID]time.Time
 
 func init() {
-	allowedMentions = &api.AllowedMentions{
+	mentionNone = &api.AllowedMentions{
 		Parse:       []api.AllowedMentionType{},
 		Roles:       []discord.RoleID{},
 		Users:       []discord.UserID{},
 		RepliedUser: new(bool),
 	}
-	*allowedMentions.RepliedUser = false
+	*mentionNone.RepliedUser = false
 	lastDeleteRequest = make(map[discord.MessageID]time.Time)
 }
 
@@ -135,7 +135,7 @@ func main() {
 	defer s.Close()
 }
 
-func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEvent, cId discord.ChannelID, mId discord.MessageID) {
+func tryDeleteByOthersDeferred(s *state.State, ev *gateway.InteractionCreateEvent, cId discord.ChannelID, mId discord.MessageID) {
 	defer func() { // Clean up
 		maxIt := 10
 		for k, t := range lastDeleteRequest {
@@ -164,7 +164,7 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		waiting = true
 		<-time.After(time.Second * 3 / 2)
 	}
-		
+
 	lastRequestedTime, foundRequest = lastDeleteRequest[mId]
 	if !foundRequest { // Already deleted
 		if waiting {
@@ -199,7 +199,6 @@ func tryDeleteByOthersDeferred (s *state.State, ev *gateway.InteractionCreateEve
 		return
 	}
 
-	
 	_, err := s.EditInteractionResponse(ev.AppID, ev.Token, api.EditInteractionResponseData{
 		Content: option.NewNullableString("You are not the OP, so you need to find someone and press this together to delete this!\n因為你不是原 PO，需要找人同時按這個才能刪除！"),
 	})

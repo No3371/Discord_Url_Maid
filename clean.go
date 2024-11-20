@@ -24,7 +24,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	if message.Author.Bot || message == nil {
 		return
 	}
-	
+
 	stats.TotalMessages++
 
 	urlMap, cleaned, redirects, masks, notUrlOnly, err := TryCleanString(message.Content, data)
@@ -43,12 +43,12 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	log.Printf("---\n")
 
 	msgData := api.SendMessageData{
-		AllowedMentions: allowedMentions,
-		Reference: &discord.MessageReference{
-			MessageID: message.ID,
-			ChannelID: message.ChannelID,
-			GuildID:   message.GuildID,
-		},
+		AllowedMentions: mentionNone,
+		// Reference: &discord.MessageReference{
+		// 	MessageID: message.ID,
+		// 	ChannelID: message.ChannelID,
+		// 	GuildID:   message.GuildID,
+		// },
 		Flags: discord.SuppressNotifications,
 		// Components: discord.Components (
 		// 	&discord.ButtonComponent{
