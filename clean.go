@@ -108,7 +108,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		return
 	}
 
-	if cleaned > 0 {
+	if cleaned > 0 || (redirects == len(urlMap)) {
 		edit := api.EditMessageData{}
 		edit.Flags = new(discord.MessageFlags)
 		*edit.Flags = message.Flags
@@ -134,7 +134,7 @@ func PrepareReply(urlMap []processedUrl) string {
 	if cleaned == 0 && len(urlMap) == 1 {
 		for _, processed := range urlMap {
 			if processed.IsRedirect {
-				sb.WriteString("↪️ Redirect Found / 可能自動轉向未知站點")
+				sb.WriteString("↪️ Redirect Found / 可能自動跳轉未知站點")
 				return sb.String()
 			}
 
@@ -171,7 +171,7 @@ func PrepareReply(urlMap []processedUrl) string {
 			sb.WriteString("||")
 		}
 		if processed.IsRedirect {
-			sb.WriteString(" ↪️ Redirect Found / 可能自動轉向未知站點")
+			sb.WriteString(" ↪️ Redirect Found / 可能自動跳轉未知站點")
 		}
 		sb.WriteRune('\n')
 	}
