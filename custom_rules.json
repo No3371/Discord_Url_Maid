@@ -38,6 +38,12 @@
             "rules": [
                 "xmt"
             ]
+        },
+        "dcard": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?dcard\\.tw",
+            "rules": [
+                "cid"
+            ]
         }
     }
 }
