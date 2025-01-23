@@ -139,6 +139,9 @@ func tryDeleteByOthersDeferred(s *state.State, ev *gateway.InteractionCreateEven
 	defer func() { // Clean up
 		maxIt := 10
 		for k, t := range lastDeleteRequest {
+			if k == mId {
+				continue // skip this subject, only clean up others
+			}
 			if time.Since(t) > time.Second*6 {
 				delete(lastDeleteRequest, k)
 			}
@@ -150,6 +153,16 @@ func tryDeleteByOthersDeferred(s *state.State, ev *gateway.InteractionCreateEven
 	}()
 	waiting := false
 	lastRequestedTime, foundRequest := lastDeleteRequest[mId]
+	if foundRequest && lastDeleteRequest[mId] == time.UnixMicro(0) {
+		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
+			Type: api.MessageInteractionWithSource,
+			Data: &api.InteractionResponseData{
+				Content: option.NewNullableString("Message is already deleted.\\該訊息已被刪除。"),
+				Flags:   discord.EphemeralMessage,
+			},
+		})
+		return
+	}
 	if !foundRequest {
 		lastDeleteRequest[mId] = time.Now()
 
@@ -188,7 +201,7 @@ func tryDeleteByOthersDeferred(s *state.State, ev *gateway.InteractionCreateEven
 				return
 			}
 		}
-		delete(lastDeleteRequest, mId)
+		lastDeleteRequest[mId] = time.UnixMicro(0)
 		s.RespondInteraction(ev.ID, ev.Token, api.InteractionResponse{
 			Type: api.MessageInteractionWithSource,
 			Data: &api.InteractionResponseData{
