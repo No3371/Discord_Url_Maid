@@ -158,6 +158,10 @@ func PrepareReply(urlMap []processedUrl) string {
 			continue
 		}
 
+		if strings.Contains(processed.Mask, "http") && processed.Raw != processed.Processed {
+			sb.WriteString("⚠️**連結不一致** ")
+		}
+
 		if processed.IsSpoiler {
 			sb.WriteString("||")
 		}
