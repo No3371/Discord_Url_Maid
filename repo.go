@@ -40,7 +40,7 @@ var impureUrlsDetector = regexp2.MustCompile(`^(?!\s*(?:https?:\/\/\S+\.\S+\s*)+
 var urlExtractor = regexp2.MustCompile(`https?:\/\/\S+\.\S+`, regexp2.None)
 
 // var urlExtractor = regexp2.MustCompile(`(?:\|\|\s*)https?:\/\/\S+?\.[^\s|]+(?:\s*\|\|)|https?:\/\/\S+?\.[^\s|]+`, regexp2.None) // [^\s|]+ for Discord
-var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*]+)`, regexp2.None)
+var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*=]+)`, regexp2.None)
 
 // var spoilerExtractor = regexp2.MustCompile(`(?<=\|\|\s*)https?:\/\/\S+(?=\s*\|\|)`, regexp2.None) // \|\|\s*(https?:\/\/\S+?)\s*\|\|
 
@@ -74,7 +74,7 @@ type rawProvider struct {
 
 // Data represents the full JSON structure with all providers
 type Data struct {
-	GlobalRules Provider `json:"-"`
+	GlobalRules Provider            `json:"-"`
 	Providers   map[string]Provider `json:"-"`
 }
 
@@ -84,8 +84,8 @@ const ALIAS_FILE = "aliases.json"
 
 // rawAlias is used for intermediate JSON unmarshalling to keep the string values temporarily
 type rawAlias struct {
-	UrlPatternStr   string   `json:"urlPattern"`
-	TargetRuleName string   `json:"targetRuleName"`
+	UrlPatternStr  string `json:"urlPattern"`
+	TargetRuleName string `json:"targetRuleName"`
 }
 
 // FetchAndLoadRules fetches the JSON file from the given URL and unmarshals it into the given Data struct
@@ -206,7 +206,7 @@ func FetchAndLoadRules(url string) (*Data, error) {
 		}
 		raw = string(rawBytes)
 	}
-	
+
 	var rawAliasFile struct {
 		Items map[string]rawAlias `json:"aliases"`
 	}
