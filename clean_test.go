@@ -18,6 +18,7 @@ func TestTryCleanString(t *testing.T) {
 		wantMasks      int
 		wantNotUrlOnly bool
 		wantErr        bool
+		solo           bool
 	}{
 		{
 			name: "NotUrlOnlySpoiler",
@@ -182,6 +183,26 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 			wantErr:        false,
 		},
 		{
+			name: "Spoiler",
+			args: args{
+				str: `順便回憶一下
+||魔法禁書目錄III 第06話【超能力者們】5:59  https://youtu.be/ybZOGIOy734?si=jP9GtZ88VWv_LaWb&t=359 ||`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://youtu.be/ybZOGIOy734?si=jP9GtZ88VWv_LaWb&t=359",
+					Processed:  "https://youtu.be/ybZOGIOy734?&t=359",
+					IsSpoiler:  true,
+					IsRedirect: false,
+				},
+			},
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: true,
+			wantErr:        false,
+		},
+		{
 			name: "Unicode",
 			args: args{
 				str: `https://tw.news.yahoo.com/美國廠員工控-反美-歧視-台積電回應了-041403730.html?guccounter=1&guce_referrer=aHR0cHM6Ly93d3cuYmluZy5jb20v&guce_referrer_sig=AQAAAAugbfaLHVLtku5rFhE3d9LwwXyRPJ1XAP-nGFY3wPlnqCrABlVBf_ecDRCtFi6SuutNMd011EYwAh6wYohJ9cFl2L6o7M1fHP2M-3U5e0EqoJGoIFWEQ5L2CH63Lk6zlPvtK-NKH1uqiY1SyQ4zdmPc4aag7Wkwb-z_onj1Bc9N`,
@@ -205,7 +226,16 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 	if err != nil {
 		t.Fatalf("FetchAndLoadJSON() error = %v", err)
 	}
+	solo := false
 	for _, tt := range tests {
+		if tt.solo {
+			solo = true
+		}
+	}
+	for _, tt := range tests {
+		if solo && !tt.solo {
+			continue
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			gotUrlMap, gotCleaned, gotRedirects, gotMasks, gotNotUrlOnly, err := TryCleanString(tt.args.str, providers)
 			if (err != nil) != tt.wantErr {

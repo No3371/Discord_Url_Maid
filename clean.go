@@ -312,7 +312,7 @@ urlLoop:
 		spoiler := spoilerMatch.String()
 
 		for k, url := range urlMap {
-			if strings.Contains(spoiler, url.Processed) {
+			if strings.Contains(spoiler, url.Raw) {
 				url.IsSpoiler = true
 				urlMap[k] = url
 			}
