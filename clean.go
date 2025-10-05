@@ -104,7 +104,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
 
-			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 訊息刪除失敗，請管理員檢查權限設定")
+			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 原訊息刪除失敗，請管理員確認管理訊息權限")
 			if err != nil {
 				log.Printf("  Failed to edit message: %v", err)
 			}
@@ -121,6 +121,10 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
 		if err != nil {
 			log.Printf("Failed to edit message: %v", err)
+			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 原訊息嵌入抑制失敗，請管理員確認管理訊息權限")
+			if err != nil {
+				log.Printf("  Failed to edit message: %v", err)
+			}
 			return
 		}
 	}
