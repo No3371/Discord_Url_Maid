@@ -93,7 +93,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		msgData.Content = fmt.Sprintf("%s: %s", message.Author.Mention(), replyString)
 	}
 
-	_, err = s.SendMessageComplex(message.ChannelID, msgData)
+	newMsg, err := s.SendMessageComplex(message.ChannelID, msgData)
 	if err != nil {
 		log.Printf("Failed to reply: %v", err)
 	}
@@ -103,6 +103,11 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		err := s.DeleteMessage(message.ChannelID, message.ID, "URL only message")
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
+
+			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 訊息刪除失敗，請管理員檢查權限設定")
+			if err != nil {
+				log.Printf("  Failed to edit message: %v", err)
+			}
 		}
 		err = nil
 		return
