@@ -319,7 +319,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
 					},
 				},
 			},
-			want: `↪️ Redirect Found / 可能自動轉向未知站點`,
+			want: `↪️ Redirect Found / 可能自動跳轉未知站點`,
 		},
 		{
 			name: "redirect+clean",
@@ -351,13 +351,13 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?&prev=1`,
 			want: `https://x.com/horo_27/status/1845408056445972628
 https://twitcasting.tv/kurokumo_01?t=你好
 ||https://www.youtube.com/live/5VL4lFPQuc4||
-https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk ↪️ Redirect Found / 可能自動轉向未知站點`,
+https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbUlwZ3hybmEyZnd5bnpTR0N5VWFnN3J4MFE1Z3xBQ3Jtc0trY2tQMzA1NDdCcnphVm5oMGlfYVB1TU5VYjZaYVZSUGFzak1hLTJ2SGN1MkZCdmx1VU9zY1l3Tl91cXpuc19yVTBZYVhNTGdzMEtDaUJjX0lXaHJSYUtvdFNiQjBGV0NkRzBvUjZXejhFblVIRV93OA&q=https%3A%2F%2Fx.com%2Fi%2Fspaces%2F1lPKqOyrXWLJb&v=eqVjAWxlxbk ↪️ Redirect Found / 可能自動跳轉未知站點`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := PrepareReply(tt.args.urlMap); got != tt.want {
-				t.Errorf("PrepareReply() = \n%v\n, want \n%v", got, tt.want)
+				t.Errorf("PrepareReply() = \n`%v`\n, want \n`%v`", got, tt.want)
 			}
 		})
 	}
