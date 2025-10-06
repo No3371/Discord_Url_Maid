@@ -104,7 +104,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		if err != nil {
 			log.Printf("Failed to delete message: %v", err)
 
-			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 原訊息刪除失敗，請管理員確認管理訊息權限")
+			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content+"\n-# 原訊息刪除失敗，請管理員確認管理訊息權限")
 			if err != nil {
 				log.Printf("  Failed to edit message: %v", err)
 			}
@@ -121,7 +121,7 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 		_, err = s.EditMessageComplex(message.ChannelID, message.ID, edit)
 		if err != nil {
 			log.Printf("Failed to edit message: %v", err)
-			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content + "\n-# 原訊息嵌入抑制失敗，請管理員確認管理訊息權限")
+			_, err = s.EditMessage(newMsg.ChannelID, newMsg.ID, newMsg.Content+"\n-# 原訊息嵌入抑制失敗，請管理員確認管理訊息權限")
 			if err != nil {
 				log.Printf("  Failed to edit message: %v", err)
 			}
@@ -143,7 +143,7 @@ func PrepareReply(urlMap []processedUrl) string {
 	if cleaned == 0 && len(urlMap) == 1 {
 		for _, processed := range urlMap {
 			if processed.IsRedirect {
-				sb.WriteString("↪️ Redirect Found / 可能自動跳轉未知站點")
+				sb.WriteString("↪️ Redirect / 重導向網址，可能是任何站點")
 				return sb.String()
 			}
 
@@ -184,7 +184,7 @@ func PrepareReply(urlMap []processedUrl) string {
 			sb.WriteString("||")
 		}
 		if processed.IsRedirect {
-			sb.WriteString(" ↪️ Redirect Found / 可能自動跳轉未知站點")
+			sb.WriteString(" ↪️ Redirect / 重導向網址，可能是任何站點")
 		}
 		sb.WriteRune('\n')
 	}
