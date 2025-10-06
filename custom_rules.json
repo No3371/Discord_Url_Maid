@@ -34,7 +34,7 @@
             ]
         },
         "threads": {
-            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?threads\\.net",
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?threads\\.com",
             "rules": [
                 "xmt"
             ]

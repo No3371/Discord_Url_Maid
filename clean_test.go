@@ -99,6 +99,24 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 			wantErr:        false,
 		},
 		{
+			name: "thread",
+			args: args{
+				str: `https://www.threads.com/@joke.r_123_is_me/post/DPbgxBqgd2v?xmt=AQF0zF8Z1mrZjLrW_f770dps7MKctxWIT4R-YoinPIAoWQ&slof=1`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:       "https://www.threads.com/@joke.r_123_is_me/post/DPbgxBqgd2v?xmt=AQF0zF8Z1mrZjLrW_f770dps7MKctxWIT4R-YoinPIAoWQ&slof=1",
+					Processed: "https://www.threads.com/@joke.r_123_is_me/post/DPbgxBqgd2v",
+					IsSpoiler: false,
+				},
+			},
+			wantCleaned:    1,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: false,
+			wantErr:        false,
+		},
+		{
 			name: "test",
 			args: args{
 				str: `[到底要多久](https://x.com/horo_27/status/1845408056445972628?s=19)
