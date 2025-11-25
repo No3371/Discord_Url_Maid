@@ -167,7 +167,7 @@ func PrepareReply(urlMap []processedUrl) string {
 	}
 
 	for _, processedUrl := range urlMap {
-		if cleaned == 0 && processedUrl.Processed == processedUrl.Raw && processedUrl.Mask == "" && !processedUrl.IsRedirect {
+		if cleaned == 0 && processedUrl.Processed == processedUrl.Raw && processedUrl.Mask == "" && !processedUrl.IsRedirect { // Nothing wrong with the message and this url
 			continue
 		}
 
@@ -309,11 +309,7 @@ urlLoop:
 			// So we can ignore those
 			if filtered, err := dcMaskFilter.MatchString(mask); err != nil {
 				log.Println("Failed to check if mask is a Discord mask:", err)
-			} else if filtered {
-				continue
-			}
-
-			if maskedMatch.GroupByNumber(2).String() == it.Raw { // We are looking at the uncleaned mesage
+			} else if !filtered && maskedMatch.GroupByNumber(2).String() == it.Raw { // Found the matching url
 				it.Mask = mask
 				urlMap[i] = it
 				masks++
