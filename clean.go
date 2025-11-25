@@ -152,13 +152,14 @@ func PrepareReply(urlMap []processedUrl) string {
 			}
 
 			if processedUrl.Mask != "" {
-				strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
-				strippedLink = strings.TrimPrefix(strippedLink, "http://")
-				strippedLink = strings.TrimSuffix(strippedLink, "/")
-				strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
-				if strippedLink != strippedMask {
-					sb.WriteString("⚠️**連結不一致** ")
-				}
+				
+				// strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
+				// strippedLink = strings.TrimPrefix(strippedLink, "http://")
+				// strippedLink = strings.TrimSuffix(strippedLink, "/")
+				// strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
+				// if strippedLink != strippedMask {
+				// 	sb.WriteString("⚠️**連結不一致** ")
+				// }
 
 				if processedUrl.IsSpoiler {
 					sb.WriteString("||")
@@ -179,15 +180,15 @@ func PrepareReply(urlMap []processedUrl) string {
 			continue
 		}
 
-		if processedUrl.Mask != "" {
-			strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
-			strippedLink = strings.TrimPrefix(strippedLink, "http://")
-			strippedLink = strings.TrimSuffix(strippedLink, "/")
-			strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
-			if strippedLink != strippedMask {
-				sb.WriteString("⚠️**連結不一致** ")
-			}
-		}
+		// if processedUrl.Mask != "" {
+		// 	strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
+		// 	strippedLink = strings.TrimPrefix(strippedLink, "http://")
+		// 	strippedLink = strings.TrimSuffix(strippedLink, "/")
+		// 	strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
+		// 	if strippedLink != strippedMask {
+		// 		sb.WriteString("⚠️**連結不一致** ")
+		// 	}
+		// }
 
 		if processedUrl.IsSpoiler {
 			sb.WriteString("||")
