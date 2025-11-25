@@ -42,6 +42,10 @@ func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.S
 	replyString := PrepareReply(urlMap)
 	log.Printf("---\n")
 
+	if replyString == "" {
+		return
+	}
+
 	msgData := api.SendMessageData{
 		AllowedMentions: mentionNone,
 		Reference: &discord.MessageReference{
