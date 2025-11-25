@@ -24,7 +24,7 @@ func enforceSpoilerPadding(src string) (string, error) {
 var connectedUrlFinder = regexp2.MustCompile(`https?:\/\/\S+?(?=https?:\/\/)`, regexp2.None)
 
 // var linebreaksFinder = regexp2.MustCompile(`\r?\n|\r`, regexp2.None)
-var maskedLinkFinder = regexp2.MustCompile(`\[(.*\S.*)]\(\s*　*(<)?(https?:\/\/\S+)(?(2)>|(?!>))\s*　*\)`, regexp2.None)
+var maskedLinkFinder = regexp2.MustCompile(`\[(.*\S.*)]\(\s*　*(<)?(https?:\/\/\S+)(?(2)>?|(?!>))\s*　*\)`, regexp2.None)
 
 func enforceMaskedLinkPadding(src string) (string, error) {
 	return maskedLinkFinder.Replace(src, "[$1]( $2 )", -1, -1)
