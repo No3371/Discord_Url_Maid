@@ -317,7 +317,7 @@ urlLoop:
 			// So we can ignore those
 			if filtered, err := dcMaskFilter.MatchString(mask); err != nil {
 				log.Println("Failed to check if mask is a Discord mask:", err)
-			} else if !filtered && maskedMatch.GroupByNumber(2).String() == it.Raw { // Found the matching url
+			} else if !filtered && maskedMatch.GroupByNumber(3).String() == it.Raw { // Found the matching url
 				it.Mask = mask
 				urlMap[i] = it
 				masks++
