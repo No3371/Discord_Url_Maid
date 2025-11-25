@@ -45,6 +45,12 @@
             "rules": [
                 "cid"
             ]
+        },
+        "chinatimes": {
+            "urlPattern": "^https?:\\/\\/(?:[a-z0-9-]+\\.)*?chinatimes\\.com",
+            "rules": [
+                "from"
+            ]
         }
     }
 }
