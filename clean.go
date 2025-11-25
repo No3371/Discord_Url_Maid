@@ -152,6 +152,14 @@ func PrepareReply(urlMap []processedUrl) string {
 			}
 
 			if processedUrl.Mask != "" {
+				strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
+				strippedLink = strings.TrimPrefix(strippedLink, "http://")
+				strippedLink = strings.TrimSuffix(strippedLink, "/")
+				strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
+				if strippedLink != strippedMask {
+					sb.WriteString("⚠️**連結不一致** ")
+				}
+
 				if processedUrl.IsSpoiler {
 					sb.WriteString("||")
 				}
@@ -177,7 +185,7 @@ func PrepareReply(urlMap []processedUrl) string {
 			strippedLink = strings.TrimSuffix(strippedLink, "/")
 			strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
 			if strippedLink != strippedMask {
-				sb.WriteString("⚠️**實際連結與顯示連結不一致** ")
+				sb.WriteString("⚠️**連結不一致** ")
 			}
 		}
 
@@ -304,7 +312,6 @@ urlLoop:
 			it := urlMap[i]
 
 			mask := maskedMatch.GroupByNumber(1).String()
-						
 			// ! Discord disables masking for "https://..." and "http://..."
 			// So we can ignore those
 			if filtered, err := dcMaskFilter.MatchString(mask); err != nil {
