@@ -134,27 +134,27 @@ func PrepareReply(urlMap []processedUrl) string {
 	sb := strings.Builder{}
 
 	cleaned := 0
-	for _, processed := range urlMap {
-		if processed.Processed != processed.Raw {
+	for _, processedUrl := range urlMap {
+		if processedUrl.Processed != processedUrl.Raw {
 			cleaned++
 		}
 	}
 
 	if cleaned == 0 && len(urlMap) == 1 {
-		for _, processed := range urlMap {
-			if processed.IsRedirect {
+		for _, processedUrl := range urlMap {
+			if processedUrl.IsRedirect {
 				sb.WriteString("↪️ Redirect / 重導向網址，可能是任何站點")
 				return sb.String()
 			}
 
-			if processed.Mask != "" {
-				if processed.IsSpoiler {
+			if processedUrl.Mask != "" {
+				if processedUrl.IsSpoiler {
 					sb.WriteString("||")
 				}
-				sb.WriteString(processed.Mask)
+				sb.WriteString(processedUrl.Mask)
 				sb.WriteString(" ↔️ ")
-				sb.WriteString(processed.Processed)
-				if processed.IsSpoiler {
+				sb.WriteString(processedUrl.Processed)
+				if processedUrl.IsSpoiler {
 					sb.WriteString("||")
 				}
 				return sb.String()
@@ -162,28 +162,40 @@ func PrepareReply(urlMap []processedUrl) string {
 		}
 	}
 
-	for _, processed := range urlMap {
-		if cleaned == 0 && processed.Processed == processed.Raw && processed.Mask == "" && !processed.IsRedirect {
+	for _, processedUrl := range urlMap {
+		if cleaned == 0 && processedUrl.Processed == processedUrl.Raw && processedUrl.Mask == "" && !processedUrl.IsRedirect {
 			continue
 		}
 
-		if strings.Contains(processed.Mask, "http") && processed.Raw != processed.Processed {
-			sb.WriteString("⚠️**連結不一致** ")
+		// ! Discord disables masking for "https://" and "http://"
+		// So we can ignore those
+		if strings.HasPrefix(processedUrl.Mask, "https://") || strings.HasPrefix(processedUrl.Mask, "http://") {
+			continue
 		}
 
-		if processed.IsSpoiler {
+		if processedUrl.Mask != "" {
+			strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
+			strippedLink = strings.TrimPrefix(strippedLink, "http://")
+			strippedLink = strings.TrimSuffix(strippedLink, "/")
+			strippedMask := strings.TrimSuffix(processedUrl.Mask, "/")
+			if strippedLink != strippedMask {
+				sb.WriteString("⚠️**實際連結與顯示連結不一致** ")
+			}
+		}
+
+		if processedUrl.IsSpoiler {
 			sb.WriteString("||")
 		}
 
-		if processed.Mask != "" {
-			sb.WriteString(processed.Mask)
+		if processedUrl.Mask != "" {
+			sb.WriteString(processedUrl.Mask)
 			sb.WriteString(" ↔️ ")
 		}
-		sb.WriteString(processed.Processed)
-		if processed.IsSpoiler {
+		sb.WriteString(processedUrl.Processed)
+		if processedUrl.IsSpoiler {
 			sb.WriteString("||")
 		}
-		if processed.IsRedirect {
+		if processedUrl.IsRedirect {
 			sb.WriteString(" ↪️ Redirect / 重導向網址，可能是任何站點")
 		}
 		sb.WriteRune('\n')
