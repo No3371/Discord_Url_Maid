@@ -167,12 +167,6 @@ func PrepareReply(urlMap []processedUrl) string {
 			continue
 		}
 
-		// ! Discord disables masking for "https://" and "http://"
-		// So we can ignore those
-		if strings.HasPrefix(processedUrl.Mask, "https://") || strings.HasPrefix(processedUrl.Mask, "http://") {
-			continue
-		}
-
 		if processedUrl.Mask != "" {
 			strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
 			strippedLink = strings.TrimPrefix(strippedLink, "http://")
@@ -304,8 +298,19 @@ urlLoop:
 	for maskedMatch != nil {
 		for i := 0; i < len(urlMap); i++ {
 			it := urlMap[i]
+
+			mask := maskedMatch.GroupByNumber(1).String()
+						
+			// ! Discord disables masking for "https://..." and "http://..."
+			// So we can ignore those
+			if filtered, err := dcMaskFilter.MatchString(mask); err != nil {
+				log.Println("Failed to check if mask is a Discord mask:", err)
+			} else if filtered {
+				continue
+			}
+
 			if maskedMatch.GroupByNumber(2).String() == it.Raw { // We are looking at the uncleaned mesage
-				it.Mask = maskedMatch.GroupByNumber(1).String()
+				it.Mask = mask
 				urlMap[i] = it
 				masks++
 			}

@@ -30,6 +30,8 @@ func enforceMaskedLinkPadding(src string) (string, error) {
 	return maskedLinkFinder.Replace(src, "[$1]( $2 )", -1, -1)
 }
 
+var dcMaskFilter = regexp2.MustCompile(`https?:\/\/\S\S`, regexp2.None)
+
 // var spoilerExtractor = regexp2.MustCompile(`\|\|(\s*?[\s\S]+?\s*)\|\|`, regexp2.None)
 // var spoilerExtractor = regexp2.MustCompile(`\|\|\s*(.+?)\s*\|\|`, regexp2.None)
 
