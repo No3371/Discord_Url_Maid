@@ -24,7 +24,7 @@ func enforceSpoilerPadding(src string) (string, error) {
 var connectedUrlFinder = regexp2.MustCompile(`https?:\/\/\S+?(?=https?:\/\/)`, regexp2.None)
 
 // var linebreaksFinder = regexp2.MustCompile(`\r?\n|\r`, regexp2.None)
-var maskedLinkFinder = regexp2.MustCompile(`\[(.*\S.*)]\(\s*<?\s*(https?:\/\/\S+?)\s*<?\s*\)`, regexp2.None)
+var maskedLinkFinder = regexp2.MustCompile(`\[(.*\S.*)]\(\s*　*(<)?(https?:\/\/\S+)(?(2)>|(?!>))\s*　*\)`, regexp2.None)
 
 func enforceMaskedLinkPadding(src string) (string, error) {
 	return maskedLinkFinder.Replace(src, "[$1]( $2 )", -1, -1)
@@ -273,3 +273,24 @@ func makeProvider(key string, rawProvider rawProvider) (provider Provider, err e
 
 	return provider, nil
 }
+
+
+// let d = [{
+// 	character: "h",
+// 	matcher: f(["H", "һ", "հ", "Ꮒ", "ℎ", "\uD835\uDC21", "\uD835\uDC89", "\uD835\uDCBD", "\uD835\uDCF1", "\uD835\uDD25", "\uD835\uDD59", "\uD835\uDD8D", "\uD835\uDDC1", "\uD835\uDDF5", "\uD835\uDE29", "\uD835\uDE5D", "\uD835\uDE91", "ｈ"])
+// }, {
+// 	character: "t",
+// 	matcher: f(["T", "\uD835\uDC2D", "\uD835\uDC61", "\uD835\uDC95", "\uD835\uDCC9", "\uD835\uDCFD", "\uD835\uDD31", "\uD835\uDD65", "\uD835\uDD99", "\uD835\uDDCD", "\uD835\uDE01", "\uD835\uDE35", "\uD835\uDE69", "\uD835\uDE9D"])
+// }, {
+// 	character: "p",
+// 	matcher: f(["P", "ρ", "ϱ", "р", "⍴", "ⲣ", "\uD835\uDC29", "\uD835\uDC5D", "\uD835\uDC91", "\uD835\uDCC5", "\uD835\uDCF9", "\uD835\uDD2D", "\uD835\uDD61", "\uD835\uDD95", "\uD835\uDDC9", "\uD835\uDDFD", "\uD835\uDE31", "\uD835\uDE65", "\uD835\uDE99", "\uD835\uDED2", "\uD835\uDEE0", "\uD835\uDF0C", "\uD835\uDF1A", "\uD835\uDF46", "\uD835\uDF54", "\uD835\uDF80", "\uD835\uDF8E", "\uD835\uDFBA", "\uD835\uDFC8", "ｐ", "ҏ"])
+// }, {
+// 	character: "s",
+// 	matcher: f(["S", "ƽ", "ѕ", "ꜱ", "ꮪ", "\uD801\uDC48", "\uD806\uDCC1", "\uD835\uDC2C", "\uD835\uDC60", "\uD835\uDC94", "\uD835\uDCC8", "\uD835\uDCFC", "\uD835\uDD30", "\uD835\uDD64", "\uD835\uDD98", "\uD835\uDDCC", "\uD835\uDE00", "\uD835\uDE34", "\uD835\uDE68", "\uD835\uDE9C", "ｓ"])
+// }, {
+// 	character: ":",
+// 	matcher: f(["ː", "˸", "։", "׃", "܃", "܄", "ः", "ઃ", "᛬", "᠃", "᠉", "⁚", "∶", "ꓽ", "꞉", "︰", "：", ";", ";"])
+// }, {
+// 	character: "/",
+// 	matcher: f(["᜵", "⁁", "⁄", "∕", "╱", "⟋", "⧸", "Ⳇ", "⼃", "〳", "ノ", "㇓", "丿", "\uD834\uDE3A"])
+// }];
