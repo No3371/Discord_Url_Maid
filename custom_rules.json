@@ -3,7 +3,9 @@
         "globalRules": {
             "urlPattern": ".*",
             "rules": [
-                "gad_source"
+                "gad_source",
+                "gad_campaignid",
+                "gbraid"
             ]
         },
         "ytimg": {
