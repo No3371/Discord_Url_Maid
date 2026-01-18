@@ -48,7 +48,7 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 			wantUrlMap: []processedUrl{
 				{
 					Raw:       "https://fixvx.com/belmond_b_2434/status/1851970896631861576?t=UD6n89jD4GoHSCFNkPsHbA&s=19",
-					Processed: "https://fixvx.com/belmond_b_2434/status/1851970896631861576",
+					Processed: "https://fixvx.com/belmond_b_2434/status/1851970896631861576?&s=19",
 					IsSpoiler: false,
 				},
 			},
@@ -120,17 +120,17 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 			name: "test",
 			args: args{
 				str: `[到底要多久](https://x.com/horo_27/status/1845408056445972628?s=19)
-https://twitcasting.tv/kurokumo_01?t=你好 a
-https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
-https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML
-https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1
-
-到底要多久`,
+00123| https://twitcasting.tv/kurokumo_01?t=你好 a
+00124| https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
+00125| https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML
+00126| https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1
+00127| 
+00128| 到底要多久`,
 			},
 			wantUrlMap: []processedUrl{
 				{
 					Raw:       "https://x.com/horo_27/status/1845408056445972628?s=19",
-					Processed: "https://x.com/horo_27/status/1845408056445972628",
+					Processed: "https://x.com/horo_27/status/1845408056445972628?s=19",
 					IsSpoiler: false,
 					Mask:      "到底要多久",
 				}, // V
@@ -155,7 +155,7 @@ https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEA
 					IsSpoiler: false,
 				}, // V
 			},
-			wantCleaned:    3,
+			wantCleaned:    2,
 			wantRedirects:  0,
 			wantMasks:      1,
 			wantNotUrlOnly: true,
@@ -387,7 +387,7 @@ func TestCleanUrl(t *testing.T) {
 		message string
 		want    string
 	}{
-		{"test", "https://x.com/4009_0825900/status/1840979404572213471?t=iy49kBSlrMutQ0QwNW4YyA&s=19", "https://x.com/4009_0825900/status/1840979404572213471"},
+		{"test", "https://x.com/4009_0825900/status/1840979404572213471?t=iy49kBSlrMutQ0QwNW4YyA&s=19", "https://x.com/4009_0825900/status/1840979404572213471?&s=19"},
 		{"test", "https://youtu.be/aVpJGGQHSqc?si=az72VbWhlionVl4c", "https://youtu.be/aVpJGGQHSqc"},
 		{"test", "https://www.youtube.com/watch?v=n-su1KVKlGk", "https://www.youtube.com/watch?v=n-su1KVKlGk"},
 		{"test", "https://www.reddit.com/r/MechanicalKeyboards/comments/156he48/attention_new_issue_with_gmk_keycaps_know_before/", "https://www.reddit.com/r/MechanicalKeyboards/comments/156he48/attention_new_issue_with_gmk_keycaps_know_before/"},

@@ -152,7 +152,7 @@ func PrepareReply(urlMap []processedUrl) string {
 			}
 
 			if processedUrl.Mask != "" {
-				
+
 				// strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
 				// strippedLink = strings.TrimPrefix(strippedLink, "http://")
 				// strippedLink = strings.TrimSuffix(strippedLink, "/")
@@ -435,17 +435,26 @@ func applyRules(provider Provider, url string, is_redirect bool) (string, bool) 
 		var matchedParam string = paramMatch.String()
 		paramName := paramMatch.GroupByNumber(1).String()
 
-		for _, rule := range provider.Rules {
-			if match, _ := rule.MatchString(paramName); match {
-
-				if strings.HasPrefix(matchedParam, "&") {
-					url = strings.Replace(url, matchedParam, "", 1)
-				} else if strings.HasPrefix(matchedParam, "?") {
-					url = strings.Replace(url, matchedParam, "?", 1)
-				}
-
-				stats.CleanedParams++
+		ignore := false
+		for _, ignored := range provider.IgnoredParameters {
+			if match, _ := ignored.MatchString(paramName); match {
+				ignore = true
 				break
+			}
+		}
+		if !ignore {
+			for _, rule := range provider.Rules {
+				if match, _ := rule.MatchString(paramName); match {
+
+					if strings.HasPrefix(matchedParam, "&") {
+						url = strings.Replace(url, matchedParam, "", 1)
+					} else if strings.HasPrefix(matchedParam, "?") {
+						url = strings.Replace(url, matchedParam, "?", 1)
+					}
+
+					stats.CleanedParams++
+					break
+				}
 			}
 		}
 

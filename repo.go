@@ -59,19 +59,21 @@ var paramExtracter = regexp2.MustCompile(`[?&]([\w]+)=([\w-\.\*=]+)`, regexp2.No
 
 // Provider represents a single provider from the ClearURLs data
 type Provider struct {
-	UrlPattern   *regexp2.Regexp   `json:"-"`
-	Rules        []*regexp2.Regexp `json:"-"`
-	Exceptions   []*regexp2.Regexp `json:"-"`
-	Redirections []*regexp2.Regexp `json:"-"`
-	Aliases      []*regexp2.Regexp `json:"-"`
+	UrlPattern        *regexp2.Regexp   `json:"-"`
+	Rules             []*regexp2.Regexp `json:"-"`
+	Exceptions        []*regexp2.Regexp `json:"-"`
+	IgnoredParameters []*regexp2.Regexp `json:"-"`
+	Redirections      []*regexp2.Regexp `json:"-"`
+	Aliases           []*regexp2.Regexp `json:"-"`
 }
 
 // rawProvider is used for intermediate JSON unmarshalling to keep the string values temporarily
 type rawProvider struct {
-	UrlPatternStr   string   `json:"urlPattern"`
-	RulesStr        []string `json:"rules"`
-	ExceptionsStr   []string `json:"exceptions"`
-	RedirectionsStr []string `json:"redirections"`
+	UrlPatternStr        string   `json:"urlPattern"`
+	RulesStr             []string `json:"rules"`
+	ExceptionsStr        []string `json:"exceptions"`
+	IgnoredParametersStr []string `json:"ignoredParameters"`
+	RedirectionsStr      []string `json:"redirections"`
 }
 
 // Data represents the full JSON structure with all providers
@@ -190,10 +192,19 @@ func FetchAndLoadRules(url string) (*Data, error) {
 		if key == "globalRules" && provider.UrlPattern.String() == data.GlobalRules.UrlPattern.String() {
 			data.GlobalRules.Rules = append(data.GlobalRules.Rules, provider.Rules...)
 			data.GlobalRules.Exceptions = append(data.GlobalRules.Exceptions, provider.Exceptions...)
+			data.GlobalRules.IgnoredParameters = append(data.GlobalRules.IgnoredParameters, provider.IgnoredParameters...)
 			data.GlobalRules.Redirections = append(data.GlobalRules.Redirections, provider.Redirections...)
 		} else {
-			// Add compiled provider to the map
-			data.Providers[key] = provider
+			if existing, ok := data.Providers[key]; ok {
+				existing.Rules = append(existing.Rules, provider.Rules...)
+				existing.Exceptions = append(existing.Exceptions, provider.Exceptions...)
+				existing.IgnoredParameters = append(existing.IgnoredParameters, provider.IgnoredParameters...)
+				existing.Redirections = append(existing.Redirections, provider.Redirections...)
+				data.Providers[key] = existing
+			} else {
+				// Add compiled provider to the map
+				data.Providers[key] = provider
+			}
 		}
 	}
 
@@ -262,6 +273,15 @@ func makeProvider(key string, rawProvider rawProvider) (provider Provider, err e
 		provider.Exceptions = append(provider.Exceptions, exception)
 	}
 
+	// Compile ignored parameters
+	for _, ignoredParamStr := range rawProvider.IgnoredParametersStr {
+		ignoredParam, err := regexp2.Compile(ignoredParamStr, regexp2.None)
+		if err != nil {
+			return provider, fmt.Errorf("failed to compile ignored parameter for provider %s: %v", key, err)
+		}
+		provider.IgnoredParameters = append(provider.IgnoredParameters, ignoredParam)
+	}
+
 	// Compile redirections
 	for _, redirectionStr := range rawProvider.RedirectionsStr {
 		redirection, err := regexp2.Compile(redirectionStr, regexp2.None)
@@ -273,7 +293,6 @@ func makeProvider(key string, rawProvider rawProvider) (provider Provider, err e
 
 	return provider, nil
 }
-
 
 // let d = [{
 // 	character: "h",

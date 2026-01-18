@@ -1,5 +1,10 @@
 {
     "providers": {
+        "x": {
+            "ignoredParameters": [
+                "^s$"
+            ]
+        },
         "globalRules": {
             "urlPattern": ".*",
             "rules": [
