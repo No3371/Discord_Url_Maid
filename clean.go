@@ -17,6 +17,57 @@ type processedUrl struct {
 	IsSpoiler  bool
 	IsRedirect bool
 	Mask       string
+	IsSafe     bool
+}
+
+func IsUrlSafe(url string, data *Data) bool {
+	// Find provider
+	var provider *Provider
+	for _, p := range data.Providers {
+		if match, _ := p.UrlPattern.MatchString(url); match {
+			provider = &p
+			break
+		}
+		// Check aliases
+		for _, alias := range p.Aliases {
+			if match, _ := alias.MatchString(url); match {
+				provider = &p
+				break
+			}
+		}
+		if provider != nil {
+			break
+		}
+	}
+
+	if provider == nil {
+		return false
+	}
+
+	// Check params
+	paramMatch, err := paramExtracter.FindStringMatch(url)
+	if err != nil || paramMatch == nil {
+		return true // No params = safe (vacuously true for "all params match")
+	}
+
+	// Iterate all params
+	for paramMatch != nil {
+		paramName := paramMatch.GroupByNumber(1).String()
+		isParamSafe := false
+		if provider.SafeParameters != nil {
+			for _, safe := range provider.SafeParameters {
+				if match, _ := safe.MatchString(paramName); match {
+					isParamSafe = true
+					break
+				}
+			}
+		}
+		if !isParamSafe {
+			return false
+		}
+		paramMatch, _ = paramExtracter.FindNextMatch(paramMatch)
+	}
+	return true
 }
 
 func TryCleanMessage(message *gateway.MessageCreateEvent, data *Data, s *state.State) {
@@ -151,7 +202,7 @@ func PrepareReply(urlMap []processedUrl) string {
 				return sb.String()
 			}
 
-			if processedUrl.Mask != "" {
+			if processedUrl.Mask != "" && !processedUrl.IsSafe {
 
 				// strippedLink := strings.TrimPrefix(processedUrl.Processed, "https://")
 				// strippedLink = strings.TrimPrefix(strippedLink, "http://")
@@ -176,7 +227,7 @@ func PrepareReply(urlMap []processedUrl) string {
 	}
 
 	for _, processedUrl := range urlMap {
-		if cleaned == 0 && processedUrl.Processed == processedUrl.Raw && processedUrl.Mask == "" && !processedUrl.IsRedirect { // Nothing wrong with the message and this url
+		if cleaned == 0 && processedUrl.Processed == processedUrl.Raw && (processedUrl.Mask == "" || processedUrl.IsSafe) && !processedUrl.IsRedirect { // Nothing wrong with the message and this url
 			continue
 		}
 
@@ -194,7 +245,7 @@ func PrepareReply(urlMap []processedUrl) string {
 			sb.WriteString("||")
 		}
 
-		if processedUrl.Mask != "" {
+		if processedUrl.Mask != "" && !processedUrl.IsSafe {
 			sb.WriteString(processedUrl.Mask)
 			sb.WriteString(" ↔️ ")
 		}
@@ -319,8 +370,12 @@ urlLoop:
 				log.Println("Failed to check if mask is a Discord mask:", err)
 			} else if !filtered && maskedMatch.GroupByNumber(3).String() == it.Raw { // Found the matching url
 				it.Mask = mask
+				if IsUrlSafe(it.Raw, data) {
+					it.IsSafe = true
+				} else {
+					masks++
+				}
 				urlMap[i] = it
-				masks++
 			}
 		}
 

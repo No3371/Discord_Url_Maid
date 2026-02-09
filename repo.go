@@ -65,6 +65,7 @@ type Provider struct {
 	IgnoredParameters []*regexp2.Regexp `json:"-"`
 	Redirections      []*regexp2.Regexp `json:"-"`
 	Aliases           []*regexp2.Regexp `json:"-"`
+	SafeParameters    []*regexp2.Regexp `json:"-"`
 }
 
 // rawProvider is used for intermediate JSON unmarshalling to keep the string values temporarily
@@ -74,6 +75,7 @@ type rawProvider struct {
 	ExceptionsStr        []string `json:"exceptions"`
 	IgnoredParametersStr []string `json:"ignoredParameters"`
 	RedirectionsStr      []string `json:"redirections"`
+	SafeParametersStr    []string `json:"safeParameters"`
 }
 
 // Data represents the full JSON structure with all providers
@@ -194,12 +196,14 @@ func FetchAndLoadRules(url string) (*Data, error) {
 			data.GlobalRules.Exceptions = append(data.GlobalRules.Exceptions, provider.Exceptions...)
 			data.GlobalRules.IgnoredParameters = append(data.GlobalRules.IgnoredParameters, provider.IgnoredParameters...)
 			data.GlobalRules.Redirections = append(data.GlobalRules.Redirections, provider.Redirections...)
+			data.GlobalRules.SafeParameters = append(data.GlobalRules.SafeParameters, provider.SafeParameters...)
 		} else {
 			if existing, ok := data.Providers[key]; ok {
 				existing.Rules = append(existing.Rules, provider.Rules...)
 				existing.Exceptions = append(existing.Exceptions, provider.Exceptions...)
 				existing.IgnoredParameters = append(existing.IgnoredParameters, provider.IgnoredParameters...)
 				existing.Redirections = append(existing.Redirections, provider.Redirections...)
+				existing.SafeParameters = append(existing.SafeParameters, provider.SafeParameters...)
 				data.Providers[key] = existing
 			} else {
 				// Add compiled provider to the map
@@ -289,6 +293,15 @@ func makeProvider(key string, rawProvider rawProvider) (provider Provider, err e
 			return provider, fmt.Errorf("failed to compile redirection for provider %s: %v", key, err)
 		}
 		provider.Redirections = append(provider.Redirections, redirection)
+	}
+
+	// Compile safe parameters
+	for _, safeParamStr := range rawProvider.SafeParametersStr {
+		safeParam, err := regexp2.Compile(safeParamStr, regexp2.None)
+		if err != nil {
+			return provider, fmt.Errorf("failed to compile safe parameter for provider %s: %v", key, err)
+		}
+		provider.SafeParameters = append(provider.SafeParameters, safeParam)
 	}
 
 	return provider, nil

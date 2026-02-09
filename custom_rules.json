@@ -5,6 +5,15 @@
                 "^s$"
             ]
         },
+        "discord_emojis": {
+          "urlPattern": "^https:\\/\\/cdn\\.discordapp\\.com\\/emojis\\/.+\\.webp",
+            "safeParameters": [
+                "size",
+                "animated",
+                "name",
+                "lossless"
+            ]
+        },
         "globalRules": {
             "urlPattern": ".*",
             "rules": [

@@ -124,7 +124,7 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 00124| https://www.youtube.com/watch?v=qQiVUv7RIPs&t=770
 00125| https://www.youtube.com/live/5VL4lFPQuc4?si=h2GlP0Dxjn23UiML
 00126| https://news.ltn.com.tw/news/life/breakingnews/4826075?fbclid=IwZXh0bgNhZW0CMTEAAR21sLbgLCKNGg1qFqOHPkGnKiINqzN3MyT1gtfuBY6Tlph-iIu06J5bgD4_aem_9oBjNcuqObVpJ-8towvPIA&prev=1
-00127| 
+00127|
 00128| 到底要多久`,
 			},
 			wantUrlMap: []processedUrl{
@@ -192,6 +192,48 @@ https://www.youtube.com/live/aMM3PQ312L8?si=d8UBZgrEFKJB5FUI ||  https://www.you
 					IsSpoiler:  false,
 					IsRedirect: false,
 					Mask:       " 123 ",
+				},
+			},
+			wantCleaned:    0,
+			wantRedirects:  0,
+			wantMasks:      1,
+			wantNotUrlOnly: true,
+			wantErr:        false,
+		},
+		{
+			name: "MasksSafeParams",
+			args: args{
+				str: `[emoji](https://cdn.discordapp.com/emojis/123.webp?size=40&name=foo)`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://cdn.discordapp.com/emojis/123.webp?size=40&name=foo",
+					Processed:  "https://cdn.discordapp.com/emojis/123.webp?size=40&name=foo",
+					IsSpoiler:  false,
+					IsRedirect: false,
+					Mask:       "emoji",
+					IsSafe:     true,
+				},
+			},
+			wantCleaned:    0,
+			wantRedirects:  0,
+			wantMasks:      0,
+			wantNotUrlOnly: true,
+			wantErr:        false,
+		},
+		{
+			name: "MasksUnsafeParams",
+			args: args{
+				str: `[emoji](https://cdn.discordapp.com/emojis/123.webp?size=40&evil=true)`,
+			},
+			wantUrlMap: []processedUrl{
+				{
+					Raw:        "https://cdn.discordapp.com/emojis/123.webp?size=40&evil=true",
+					Processed:  "https://cdn.discordapp.com/emojis/123.webp?size=40&evil=true",
+					IsSpoiler:  false,
+					IsRedirect: false,
+					Mask:       "emoji",
+					IsSafe:     false,
 				},
 			},
 			wantCleaned:    0,
