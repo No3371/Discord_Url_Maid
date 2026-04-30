@@ -6,7 +6,7 @@
             ]
         },
         "discord_emojis": {
-          "urlPattern": "^https:\\/\\/cdn\\.discordapp\\.com\\/emojis\\/.+\\.webp",
+          "urlPattern": "^https:\\/\\/cdn\\.discordapp\\.com\\/(emojis|stickers)\\/.+\\.webp",
             "safeParameters": [
                 "size",
                 "animated",
